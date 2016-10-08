@@ -1,0 +1,90 @@
+---
+-   hosts: localhost
+    gather_facts: false
+    vars:
+        blueprint_name: "{{ BLUEPRINT_NAME }}"
+
+    tasks:
+        - name: make blueprint tmp directory
+          file: dest="{{TMPDIR}}/{{blueprint_name}}" state=directory
+          register: bp_dir
+
+        - name: login to AOS-server
+          aos_login: server=aos-server
+          register: aos
+
+        - name: get blueprint content for '{{blueprint_name}}'
+          aos_blueprint_content:
+            session: "{{aos.session}}"
+            name: "{{blueprint_name}}"
+          register: bp
+
+        - name: saving blueprint json
+          copy:
+            content: "{{bp.content}}"
+            dest: "{{ bp_dir.path }}/blueprint.json"
+          register: bp_file
+
+        - name: extract external router bgp information
+          aos_blueprint_extract:
+            extract: to_external_routers
+            content: "{{ bp.content }}"
+
+          register: bgp_data
+
+        - name: template build each router quagga config
+          template:
+            src: quagga_router.jinja2
+            dest: "{{bp_dir.path}}/{{ item }}_quagga.conf"
+          with_items: "{{ bgp_data.rtr_links }}"
+
+        - name: extract DHCP scopes for server subnets
+          aos_blueprint_extract:
+            extract: to_server_dhcp_scopes
+            content: "{{bp.content}}"
+          register: dhcpd_scopes
+
+        - name: saving dhcpd scopes json
+          copy:
+            content: "{{dhcpd_scopes}}"
+            dest: "{{ bp_dir.path }}/dhcpd_scopes.json"
+
+        - name: template build the DHCP scopes file
+          template:
+            src: isc-dhcpd-scopes.jinja2
+            dest: "{{bp_dir.path}}/dhcpd_scopes_{{BLUEPRINT_NAME}}.conf"
+
+
+-   hosts: routers
+    become: yes
+    vars:
+        bp_dir: "{{TMPDIR}}/{{BLUEPRINT_NAME}}"
+
+    tasks:
+        - name: copy over Quagga.conf
+          copy: src="{{bp_dir}}/{{inventory_hostname}}_quagga.conf"
+                dest=/etc/quagga/Quagga.conf
+          register: quagga_conf
+
+        - name: restart Quagga
+          service: name=quagga state=restarted
+          when: quagga_conf.changed
+
+
+-   hosts: dhcpd-server
+    become: yes
+    vars:
+        bp_dir: "{{TMPDIR}}/{{BLUEPRINT_NAME}}"
+
+    tasks:
+        - set_fact:
+            dhcpd_conf: "{{bp_dir}}/dhcpd_scopes_{{BLUEPRINT_NAME}}.conf"
+
+        - name: copy over DHCP server scopes file
+          copy:
+            src: "{{ dhcpd_conf }}"
+            dest: /etc/dhcp/include_scopes
+          register: dhcpd_scopes
+
+
+

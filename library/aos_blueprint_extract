@@ -1,0 +1,76 @@
+#!/usr/bin/env python
+
+from netaddr import IPAddress, IPNetwork
+from collections import defaultdict
+from ansible.module_utils.basic import AnsibleModule
+
+def extract_to_external_routers(module):
+    bp = module.params['content']
+    bp_nodes = {n['display_name']: n for n in bp['system']['nodes']}
+    rtr_nodes = {r['display_name']: r for r in bp['external_endpoints']['routers']}
+
+    links = filter(lambda l: l['role'] == 'to_external_router', bp['system']['links'])
+    if not links:
+        module.fail_json(msg='blueprint does not have any external router links')
+
+    rtr_links = defaultdict(list)
+    node_set = set()
+    for link in links:
+        ends = link['endpoints']
+        rtr_i = next((i for i, v in enumerate(ends) if v['type'] == 'external_router'))
+        rtr_peer  = ends[rtr_i], ends[(rtr_i + 1) % 2]
+        node_set.add(rtr_peer[1]['display_name'])
+        rtr_links[rtr_peer[0]['display_name']].append(rtr_peer)
+
+    sw_nodes = {n: bp_nodes[n] for n in node_set}
+    module.exit_json(
+        changed=True,
+        rtr_nodes=rtr_nodes, sw_nodes=sw_nodes, rtr_links=rtr_links)
+
+
+def extract_to_servers(module):
+    bp = module.params['content']
+    sys_nodes = bp['system']['nodes']
+    scopes = list()
+
+    def _extract_l2_edge():
+        for node in [n for n in sys_nodes if 'server_vlan_ip' in n]:
+            _scope = dict()
+            svi_net = IPNetwork(node['server_vlan_ip'])
+            first_host_intval = svi_net.first + 1
+            _scope['network'] = str(svi_net.network)
+            _scope['netmask'] = str(svi_net.netmask)
+            _scope['gateway'] = str(IPAddress(first_host_intval))
+            _scope['range_first'] = str(IPAddress(first_host_intval+1))
+            _scope['range_last'] = str(IPAddress(svi_net.last - 1))
+            _scope['comment'] = "VLAN IP on hostname=%s" % node['hostname']
+            scopes.append(_scope)
+
+    def _extract_l3_edge():
+        pass
+
+    if bp['intent']['l2_edge_ip_connectivity_intent']['active']:
+        _extract_l2_edge()
+
+    if bp['intent']['l3_edge_ip_connectivity_intent']['active']:
+        _extract_l3_edge()
+
+    module.exit_json(changed=True, scopes=scopes)
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            content=dict(required=True, type="dict"),
+            extract=dict(required=True,
+                         choices=['to_external_routers',
+                                  'to_server_dhcp_scopes']))
+    )
+    {
+        'to_external_routers': extract_to_external_routers,
+        'to_server_dhcp_scopes': extract_to_servers
+    }.get(module.params['extract'])(module)
+
+
+if __name__ == '__main__':
+    main()

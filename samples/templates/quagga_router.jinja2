@@ -1,0 +1,62 @@
+{#
+   setup some global variables used by this jinja2 template
+#}
+{% set RtrNode = bgp_data.rtr_nodes[item] %}
+{% set RtrLinks = bgp_data.rtr_links[item] %}
+{% set RtrIntfs = hostvars[item].IpAddrToPort %}
+{% set ExportKernel = True %}
+{#
+  ==================================================================
+  define a macro that is used to create each neighbor-link set
+  of configuration
+  ==================================================================
+#}
+{% macro qugga_bgp_neighbor(link) %}
+{% set rtr_end = link[0] %}
+{% set nei_end = link[1] %}
+{% set nei_name = nei_end['display_name'] %}
+{% set nei_node = bgp_data.sw_nodes[nei_name] %}
+{% set nei_port = nei_end['interface'] %}
+{% set nei_ipaddr = nei_node['loopback_ip'].split('/')[0] %}
+{% set local_port = 'swp1' %}
+   neighbor {{ nei_ipaddr }} remote-as {{ nei_node['asn'] }}
+   neighbor {{ nei_ipaddr }} description {{ nei_name }}:{{ nei_port }}
+   neighbor {{ nei_ipaddr }} ebgp-multihop 2
+   neighbor {{ nei_ipaddr }} update-source {{ RtrIntfs[rtr_end['ip']] }}
+   neighbor {{ nei_ipaddr }} advertisement-interval 0
+   neighbor {{ nei_ipaddr }} next-hop-self
+   neighbor {{ nei_ipaddr }} soft-reconfiguration inbound
+   neighbor {{ nei_ipaddr }} default-originate
+{%- endmacro %}
+{#  #}
+{% macro nei_static_route(nei_end) %}
+{% set nei_name = nei_end['display_name'] %}
+{% set nei_node = bgp_data.sw_nodes[nei_name] %}
+ip route {{nei_node['loopback_ip'] }} {{ nei_end['ip'].split('/')[0]}}
+{%- endmacro %}
+{#
+   ==================================================================
+   main 'router bgp' definition
+   ==================================================================
+#}
+router bgp {{ RtrNode['asn'] }}
+   bgp router-id {{ RtrNode['loopback_ip'] }}
+   bgp log-neighbor-changes
+   redistribute static
+   redistribute connected
+{% if ExportKernel is defined and not ExportKernel %}
+{% else %}
+   redistribute kernel
+{% endif %}
+{% for link in RtrLinks %}
+{{ qugga_bgp_neighbor(link) }}
+{% endfor %}
+!
+{#
+   ==================================================================
+   now add the static routes to the loopback of each peer
+   ==================================================================
+#}
+{% for link in RtrLinks %}
+{{nei_static_route(nei_end=link[1])}}
+{% endfor %}

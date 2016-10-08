@@ -87,3 +87,9 @@ ENV/
 
 # Rope project settings
 .ropeproject
+
+# Vagrant stuff
+acceptance_config.yml
+boxes/*
+.vagrant
+.idea/

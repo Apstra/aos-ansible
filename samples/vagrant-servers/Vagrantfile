@@ -1,0 +1,30 @@
+require 'yaml'
+
+BoxName = "cumulus-vx-2.5.6"
+Servers = YAML.load_file('../servers.yml')
+
+Vagrant.configure(2) do |config|
+  config.vbguest.auto_update = false
+
+  Servers.each do |server|
+    config.vm.define server["name"] do |node|
+      node.vm.hostname = server["name"]
+      node.vm.box = BoxName
+      node.vm.network "private_network",
+         type: "dhcp", virtualbox__intnet: server["intnet"]
+
+      node.vm.provider "virtualbox" do |v|
+        v.name = server["name"]
+        v.memory = 512
+        v.cpus = 1
+        v.gui = true
+        v.customize ['modifyvm', :id, '--nictype2', 'virtio']
+      end
+
+      node.vm.provision "ansible" do |ansible|
+        ansible.playbook = "playbook.yml"
+      end
+
+    end
+  end
+end

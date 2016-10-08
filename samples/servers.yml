@@ -1,0 +1,3 @@
+---
+- name: server-1-3
+  intnet: leaf-1@pod_1:swp3

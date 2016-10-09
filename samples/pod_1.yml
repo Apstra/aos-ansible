@@ -5,45 +5,45 @@
         blueprint_name: "{{ BLUEPRINT_NAME }}"
 
     tasks:
-        - name: make blueprint tmp directory
+        - name: Make blueprint tmp directory on localhost
           file: dest="{{TMPDIR}}/{{blueprint_name}}" state=directory
           register: bp_dir
 
-        - name: login to AOS-server
+        - name: Login to AOS-server
           aos_login: server=aos-server
           register: aos
 
-        - name: get blueprint content for '{{blueprint_name}}'
+        - name: Get blueprint content for '{{blueprint_name}}'
           aos_blueprint_content:
             session: "{{aos.session}}"
             name: "{{blueprint_name}}"
           register: bp
 
-        - name: saving blueprint json
+        - name: Saving blueprint json
           copy:
             content: "{{bp.content}}"
             dest: "{{ bp_dir.path }}/blueprint.json"
           register: bp_file
 
-        - name: extract external router bgp information
+        - name: Extract external router bgp information
           aos_blueprint_extract:
             extract: to_external_routers
             content: "{{ bp.content }}"
           register: bgp_data
 
-        - name: template build each router quagga config
+        - name: Template build each router quagga config
           template:
             src: quagga_router.jinja2
             dest: "{{bp_dir.path}}/{{ item }}_quagga.conf"
           with_items: "{{ bgp_data.rtr_links }}"
 
-        - name: extract DHCP scopes for server subnets
+        - name: Extract DHCP scopes for server subnets
           aos_blueprint_extract:
             extract: to_server_dhcp_scopes
             content: "{{bp.content}}"
           register: dhcpd_scopes
 
-        - name: saving dhcpd scopes json
+        - name: Saving dhcpd scopes json
           copy:
             content: "{{dhcpd_scopes}}"
             dest: "{{ bp_dir.path }}/dhcpd_scopes.json"
@@ -84,12 +84,9 @@
         bp_dir: "{{TMPDIR}}/{{BLUEPRINT_NAME}}"
 
     tasks:
-        - set_fact:
-            dhcpd_conf: "{{bp_dir}}/dhcpd_scopes_{{BLUEPRINT_NAME}}.conf"
-
         - name: copy over DHCP server scopes file
           copy:
-            src: "{{ dhcpd_conf }}"
+            src: "{{bp_dir}}/dhcpd_scopes_{{BLUEPRINT_NAME}}.conf"
             dest: /etc/dhcp/include_scopes
           register: dhcpd_scopes
 

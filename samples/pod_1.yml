@@ -60,6 +60,14 @@
         bp_dir: "{{TMPDIR}}/{{BLUEPRINT_NAME}}"
 
     tasks:
+        - name: bring down interfaces to blueprint
+          shell: ip link set dev {{item.value}} down && ip addr flush dev {{item.value}}
+          with_dict: "{{ IpAddrToPort }}"
+
+        - name: bring up interfaces to blueprint
+          shell: ip addr add {{item.key}} dev {{item.value}} && ip link set {{item.value}} up
+          with_dict: "{{ IpAddrToPort }}"
+
         - name: copy over Quagga.conf
           copy: src="{{bp_dir}}/{{inventory_hostname}}_quagga.conf"
                 dest=/etc/quagga/Quagga.conf

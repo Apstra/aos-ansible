@@ -29,7 +29,6 @@
           aos_blueprint_extract:
             extract: to_external_routers
             content: "{{ bp.content }}"
-
           register: bgp_data
 
         - name: template build each router quagga config
@@ -85,6 +84,10 @@
             src: "{{ dhcpd_conf }}"
             dest: /etc/dhcp/include_scopes
           register: dhcpd_scopes
+
+        - name: Restart DHCP server to include new scopes
+          service: name=isc-dhcp-server state=restarted
+          when: dhcpd_scopes.changed
 
 
 

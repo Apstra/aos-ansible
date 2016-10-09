@@ -4,6 +4,7 @@ from netaddr import IPAddress, IPNetwork
 from collections import defaultdict
 from ansible.module_utils.basic import AnsibleModule
 
+
 def extract_to_external_routers(module):
     bp = module.params['content']
     bp_nodes = {n['display_name']: n for n in bp['system']['nodes']}
@@ -18,7 +19,7 @@ def extract_to_external_routers(module):
     for link in links:
         ends = link['endpoints']
         rtr_i = next((i for i, v in enumerate(ends) if v['type'] == 'external_router'))
-        rtr_peer  = ends[rtr_i], ends[(rtr_i + 1) % 2]
+        rtr_peer = ends[rtr_i], ends[(rtr_i + 1) % 2]
         node_set.add(rtr_peer[1]['display_name'])
         rtr_links[rtr_peer[0]['display_name']].append(rtr_peer)
 
@@ -28,9 +29,11 @@ def extract_to_external_routers(module):
         rtr_nodes=rtr_nodes, sw_nodes=sw_nodes, rtr_links=rtr_links)
 
 
-def extract_to_servers(module):
+def extract_server_dhcpd_scopes(module):
     bp = module.params['content']
     sys_nodes = bp['system']['nodes']
+    sys_links = bp['system']['links']
+
     scopes = list()
 
     def _extract_l2_edge():
@@ -47,7 +50,18 @@ def extract_to_servers(module):
             scopes.append(_scope)
 
     def _extract_l3_edge():
-        pass
+        for link in [l for l in sys_links if l['role'] == 'leaf_l3_server']:
+            _scope = dict()
+            (svr_end, leaf_end) = sorted(link['endpoints'], key=lambda x: x['type'])
+            leaf_net = IPNetwork(leaf_end['ip'])
+            _scope['network'] = str(leaf_net.network)
+            _scope['netmask'] = str(leaf_net.netmask)
+            _scope['gateway'] = _scope['network']
+            _scope['range_first'] = svr_end['ip'].split('/')[0]
+            _scope['range_last'] = _scope['range_first']
+            _scope['comment'] = "L3 connected to {}:{}".format(
+                leaf_end['display_name'], leaf_end['interface'])
+            scopes.append(_scope)
 
     if bp['intent']['l2_edge_ip_connectivity_intent']['active']:
         _extract_l2_edge()
@@ -68,7 +82,7 @@ def main():
     )
     {
         'to_external_routers': extract_to_external_routers,
-        'to_server_dhcp_scopes': extract_to_servers
+        'to_server_dhcp_scopes': extract_server_dhcpd_scopes
     }.get(module.params['extract'])(module)
 
 

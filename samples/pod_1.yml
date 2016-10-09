@@ -60,20 +60,20 @@
         bp_dir: "{{TMPDIR}}/{{BLUEPRINT_NAME}}"
 
     tasks:
-        - name: bring down interfaces to blueprint
+        - name: Bring down interfaces to blueprint
           shell: ip link set dev {{item.value}} down && ip addr flush dev {{item.value}}
           with_dict: "{{ IpAddrToPort }}"
 
-        - name: bring up interfaces to blueprint
+        - name: Bring up interfaces to blueprint
           shell: ip addr add {{item.key}} dev {{item.value}} && ip link set {{item.value}} up
           with_dict: "{{ IpAddrToPort }}"
 
-        - name: copy over Quagga.conf
+        - name: Copy over Quagga.conf
           copy: src="{{bp_dir}}/{{inventory_hostname}}_quagga.conf"
                 dest=/etc/quagga/Quagga.conf
           register: quagga_conf
 
-        - name: restart Quagga
+        - name: Restart Quagga
           service: name=quagga state=restarted
           when: quagga_conf.changed
 
@@ -89,6 +89,13 @@
             src: "{{bp_dir}}/dhcpd_scopes_{{BLUEPRINT_NAME}}.conf"
             dest: /etc/dhcp/include_scopes
           register: dhcpd_scopes
+
+        - name: Ensure scopes file is included
+          lineinfile:
+            dest: /etc/dhcp/include_scopes.conf
+            regexp: "dhcpd_scopes_pod_1\\.conf"
+            state: present
+            line: include "/etc/dhcp/include_scopes/dhcpd_scopes_pod_1.conf";
 
         - name: Restart DHCP server to include new scopes
           service: name=isc-dhcp-server state=restarted

@@ -1,7 +1,7 @@
 [localhost]
 localhost ansible_connection=local
 
-[routers]
+[ext-routers]
 router-A ansible_host=192.168.59.2 ansible_user=admin
 
 [dhcpd-server]

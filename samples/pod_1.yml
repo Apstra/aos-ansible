@@ -54,19 +54,18 @@
             dest: "{{bp_dir.path}}/dhcpd_scopes_{{BLUEPRINT_NAME}}.conf"
 
 
--   hosts: routers
+-   hosts: ext-routers
     become: yes
     vars:
         bp_dir: "{{TMPDIR}}/{{BLUEPRINT_NAME}}"
 
     tasks:
-        - name: Bring down interfaces to blueprint
-          shell: ip link set dev {{item.value}} down && ip addr flush dev {{item.value}}
-          with_dict: "{{ IpAddrToPort }}"
+        - name: Configure loopback address
+          include: ipaddr_assign.yml iface=lo ipaddr=10.9.1.1/32
 
-        - name: Bring up interfaces to blueprint
-          shell: ip addr add {{item.key}} dev {{item.value}} && ip link set {{item.value}} up
-          with_dict: "{{ IpAddrToPort }}"
+        - name: Configure interface addresses connected to blueprint
+          include: ipaddr_assign.yml iface={{ item.value }} ipaddr={{ item.key }}
+          with_dict: "{{IpAddrToPort}}"
 
         - name: Copy over Quagga.conf
           copy: src="{{bp_dir}}/{{inventory_hostname}}_quagga.conf"

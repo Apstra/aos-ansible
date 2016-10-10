@@ -86,15 +86,15 @@
         - name: copy over DHCP server scopes file
           copy:
             src: "{{bp_dir}}/dhcpd_scopes_{{BLUEPRINT_NAME}}.conf"
-            dest: /etc/dhcp/include_scopes
+            dest: /etc/dhcp
           register: dhcpd_scopes
 
         - name: Ensure scopes file is included
           lineinfile:
-            dest: /etc/dhcp/include_scopes.conf
-            regexp: "dhcpd_scopes_pod_1\\.conf"
+            dest: /etc/dhcp/dhcpd.conf
+            regexp: "^include .* dhcpd_scopes_pod_1\\.conf"
             state: present
-            line: include "/etc/dhcp/include_scopes/dhcpd_scopes_pod_1.conf";
+            line: include "/etc/dhcp/dhcpd_scopes_pod_1.conf";
 
         - name: Restart DHCP server to include new scopes
           service: name=isc-dhcp-server state=restarted

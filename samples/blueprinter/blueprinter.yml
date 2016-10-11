@@ -8,7 +8,7 @@
           register: bp_dir
 
         - name: Login to AOS-server
-          aos_login: server=aos-server
+          aos_login: server={{ aos_server_host }}
           register: aos
 
         - name: Get blueprint content for '{{BlueprintName}}'
@@ -90,9 +90,9 @@
         - name: Ensure scopes file is included
           lineinfile:
             dest: /etc/dhcp/dhcpd.conf
-            regexp: "^include .* dhcpd_scopes_pod_1\\.conf"
+            regexp: "dhcpd_scopes_{{BlueprintName}}"
             state: present
-            line: include "/etc/dhcp/dhcpd_scopes_pod_1.conf";
+            line: include "/etc/dhcp/dhcpd_scopes_{{BlueprintName}}.conf";
 
         - name: Restart DHCP server to include new scopes
           service: name=isc-dhcp-server state=restarted

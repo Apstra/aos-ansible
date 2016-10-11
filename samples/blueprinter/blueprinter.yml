@@ -59,7 +59,7 @@
 
     tasks:
         - name: Configure loopback address
-          include: tasks/ipaddr_assign.yml iface=lo ipaddr=10.9.1.1/32
+          include: tasks/ipaddr_assign.yml iface=lo ipaddr="{{LoopbackIp}}/32"
 
         - name: Configure interface addresses connected to blueprint
           include: tasks/ipaddr_assign.yml iface={{ item.value }} ipaddr={{ item.key }}

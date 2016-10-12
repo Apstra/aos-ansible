@@ -2,10 +2,10 @@
 
 import json
 
+from ansible.module_utils.basic import AnsibleModule
+
 from apstra.aoscp.session import Session
 from apstra.aoscp.exc import SessionRqstError
-
-from ansible.module_utils.basic import AnsibleModule
 
 
 def do_backup_resource(module, resources):
@@ -62,7 +62,7 @@ def main():
     module = AnsibleModule(
         argument_spec=dict(
             session=dict(required=True, type="dict"),
-            resource=dict(required=True),
+            collection=dict(required=True),
             src=dict(required=False),
             name=dict(required=False),
             backup=dict(require=False)
@@ -77,10 +77,10 @@ def main():
     aos.api.resume(auth['url'], auth['headers'])
 
     try:
-        resources = getattr(aos, margs['resource'])
+        resources = getattr(aos, margs['collection'])
 
     except NotImplementedError:
-        module.fail_json(msg="unknown resource '%s'" % margs['resource'])
+        module.fail_json(msg="unknown resource '%s'" % margs['collection'])
 
     if margs['backup'] and margs['name']:
         do_backup_resource(module, resources)

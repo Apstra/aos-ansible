@@ -40,10 +40,6 @@ EXAMPLES = '''
 
 '''
 
-import os
-import sys
-sys.path.append('/Users/jeremy/Projects/aos-pyez/pylib')
-
 from apstra.aoscp.session import Session
 import apstra.aoscp.exc as AosExc
 from ansible.module_utils.basic import AnsibleModule
@@ -70,8 +66,8 @@ def main():
         module.fail_json(msg="AOS-server login credentials failed")
 
     module.exit_json(
-        changed=True,
-        session=dict(url=aos.api_http, headers=aos.api_headers)
+        changed=False,
+        session=dict(url=aos.api.url, headers=aos.api.headers)
     )
 
 main()

@@ -40,9 +40,6 @@ EXAMPLES = '''
 
 '''
 
-import sys
-sys.path.append('/Users/jeremy/Projects/aos-pyez/pylib')
-
 import requests
 from apstra.aoscp.session import Session
 from ansible.module_utils.basic import AnsibleModule
@@ -57,11 +54,11 @@ def main():
     name = mod_args['name']
     auth = mod_args['session']
 
-    aos = Session()
-    aos.api_http = auth['url']
-    aos.api_headers = auth['headers']
 
-    got = requests.get('%s/blueprints' % aos.api_http, headers=aos.api_headers)
+    api_http = auth['url']
+    api_headers = auth['headers']
+
+    got = requests.get('%s/blueprints' % api_http, headers=api_headers)
     if not got.ok:
         module.fail_json(msg='unable to get blueprint catalog: code={}'.format(got.status_code))
 
@@ -71,8 +68,8 @@ def main():
         module.fail_json(msg='blueprint named %s not found' % name)
 
     digest=found[0]
-    got = requests.get('{}/blueprints/{}'.format(aos.api_http, digest['id']),
-                       headers=aos.api_headers)
+    got = requests.get('{}/blueprints/{}'.format(api_http, digest['id']),
+                       headers=api_headers)
     if not got.ok:
         module.fail_json(msg='unable to get blueprint: code={}'.format(got.status_code))
 

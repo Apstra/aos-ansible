@@ -43,13 +43,6 @@ def main():
         param_map = margs['param_map']
         param_map = json.loads(param_map)
 
-        # if isinstance(param_map, dict):
-        #     json.dump(param_map, open('/tmp/map-%s.json' % margs['param_name'], 'w+'), indent=3)
-        # else:
-        #     json.dump(param_map, open('/tmp/no-map-%s.json' % margs['param_name'], 'w+'), indent=3)
-        #     if not param_map:
-        #         module.fail_json(msg='there is no param-map provided')
-
         if param_map:
             if isinstance(param_map, dict):
                 xf = CollectionValueMultiTransformer(aos, param_map)

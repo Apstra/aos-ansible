@@ -1,6 +1,0 @@
-- name: Bring down interfaces '{{iface}}'
-  shell: ip link set dev {{iface}} down && ip addr flush dev {{iface}}
-
-- name: Bring up interfaces '{{iface}}' as '{{ipaddr}}'
-  shell: ip addr add {{ipaddr}} dev {{iface}} && ip link set {{iface}} up
-

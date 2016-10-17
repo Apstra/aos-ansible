@@ -1,8 +1,0 @@
-[localhost]
-localhost ansible_connection=local aos_server_host=aos-server
-
-[ext-routers]
-router-A ansible_host=192.168.59.2 ansible_user=admin
-
-[dhcpd-server]
-aeon-ztps ansible_user=admin

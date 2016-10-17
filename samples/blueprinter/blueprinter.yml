@@ -1,0 +1,102 @@
+---
+-   hosts: localhost
+    gather_facts: false
+
+    tasks:
+        - name: Make blueprint tmp directory on localhost
+          file: dest="{{TMPDIR}}/{{BlueprintName}}" state=directory
+          register: bp_dir
+
+        - name: Login to AOS-server
+          aos_login: server={{ aos_server_host }}
+          register: aos
+
+        - name: Get blueprint content for '{{BlueprintName}}'
+          aos_blueprint_content:
+            session: "{{aos.session}}"
+            name: "{{BlueprintName}}"
+          register: bp
+
+        - name: Saving blueprint json
+          copy:
+            content: "{{bp.content}}"
+            dest: "{{ bp_dir.path }}/blueprint.json"
+          register: bp_file
+
+        - name: Extract external router bgp information
+          aos_blueprint_extract:
+            extract: to_external_routers
+            content: "{{ bp.content }}"
+          register: bgp_data
+
+        - name: Template build each router quagga config
+          template:
+            src: quagga_router.jinja2
+            dest: "{{bp_dir.path}}/{{ item }}_quagga.conf"
+          with_items: "{{ bgp_data.rtr_links }}"
+
+        - name: Extract DHCP scopes for server subnets
+          aos_blueprint_extract:
+            extract: to_server_dhcp_scopes
+            content: "{{bp.content}}"
+          register: dhcpd_scopes
+
+        - name: Saving dhcpd scopes json
+          copy:
+            content: "{{dhcpd_scopes}}"
+            dest: "{{ bp_dir.path }}/dhcpd_scopes.json"
+
+        - name: template build the DHCP scopes file
+          template:
+            src: isc-dhcpd-scopes.jinja2
+            dest: "{{bp_dir.path}}/dhcpd_scopes_{{BlueprintName}}.conf"
+
+
+-   hosts: ext-routers
+    become: yes
+    vars:
+        bp_dir: "{{TMPDIR}}/{{BlueprintName}}"
+
+    tasks:
+        - name: Configure loopback address
+          include: tasks/ipaddr_assign.yml iface=lo ipaddr="{{LoopbackIp}}/32"
+
+        - name: Configure interface addresses connected to blueprint
+          include: tasks/ipaddr_assign.yml iface={{ item.value }} ipaddr={{ item.key }}
+          with_dict: "{{IpAddrToPort}}"
+
+        - name: Copy over Quagga.conf
+          copy: src="{{bp_dir}}/{{inventory_hostname}}_quagga.conf"
+                dest=/etc/quagga/Quagga.conf
+          register: quagga_conf
+
+        - name: Restart Quagga
+          service: name=quagga state=restarted
+          when: quagga_conf.changed
+
+
+-   hosts: dhcpd-server
+    become: yes
+    vars:
+        bp_dir: "{{TMPDIR}}/{{BlueprintName}}"
+
+    tasks:
+        - name: copy over DHCP server scopes file
+          copy:
+            src: "{{bp_dir}}/dhcpd_scopes_{{BlueprintName}}.conf"
+            dest: /etc/dhcp
+          register: dhcpd_scopes
+
+        - name: Ensure scopes file is included
+          lineinfile:
+            dest: /etc/dhcp/dhcpd.conf
+            regexp: "dhcpd_scopes_{{BlueprintName}}"
+            state: present
+            line: include "/etc/dhcp/dhcpd_scopes_{{BlueprintName}}.conf";
+
+        - name: Restart DHCP server to include new scopes
+          service: name=isc-dhcp-server state=restarted
+          when: dhcpd_scopes.changed
+
+
+

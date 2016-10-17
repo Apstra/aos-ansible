@@ -1,0 +1,12 @@
+{% macro make_dhcp_scope(scope) %}
+subnet {{ scope.network }} netmask {{ scope.netmask }} {
+# {{ scope.comment }}
+        range {{ scope.range_first }} {{ scope.range_last }};
+        option routers {{ scope.gateway }};
+}
+{% endmacro %}
+{#
+#}
+{% for scope in dhcpd_scopes.scopes %}
+{{ make_dhcp_scope(scope) }}
+{% endfor %}

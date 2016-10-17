@@ -14,7 +14,36 @@ def create_blueprint(aos, blueprint, module):
         blueprint.create(template_id, reference_arch=margs['reference_arch'])
 
     except SessionError as exc:
-        module.fail_json(msg="unable to create blueprint: %s" % exc.message)
+        msg = 'likely missing dependencies' if 'UNPROCESSABLE ENTITY' in exc.message \
+            else exc.message
+
+        module.fail_json(msg="unable to create blueprint: %s" % msg)
+
+    module.exit_json(changed=True, contents=blueprint.contents)
+
+
+def ensure_absent(aos, blueprint, module):
+    if not blueprint.exists:
+        module.exit_json(changed=False)
+
+    try:
+        del blueprint.contents
+    except SessionError as exc:
+        module.fail_json(msg='unable to delete blueprint, %s' % exc.message)
+
+    module.exit_json(changed=True)
+
+
+def ensure_present(aos, blueprint, module):
+    margs = module.params
+
+    if blueprint.exists:
+        module.exit_json(changed=False, contents=blueprint.contents)
+
+    if margs['design_template'] and margs['reference_arch']:
+        create_blueprint(aos, blueprint, module)
+
+    module.fail_json(msg='blueprint %s does not exist' % blueprint.name)
 
 
 def main():
@@ -39,18 +68,11 @@ def main():
 
     blueprint = aos.Blueprints[margs['name']]
 
-    if margs['state'] == 'absent':
-        del blueprint.contents
+    {
+        'absent': ensure_absent,
+        'present': ensure_present
+    }.get(margs['state'])(
+        aos, blueprint, module)
 
-    if blueprint.exists:
-        module.exit_json(changed=False, contents=blueprint.contents)
-
-    if margs['design_template'] and margs['reference_arch']:
-        create_blueprint(aos, blueprint, module)
-
-    if blueprint.exists:
-        module.exit_json(changed=True, contents=blueprint.contents)
-    else:
-        module.fail_json(msg='blueprint %s does not exist' % blueprint.name)
 
 main()

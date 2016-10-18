@@ -1,0 +1,73 @@
+#!/usr/bin/env python
+
+DOCUMENTATION = '''
+---
+module: aos_login
+author: Jeremy Schulman
+version_added: "1.0.0"
+short_description: Login to AOS server for session token
+description:
+    - Obtain the AOS server session token by providing the required
+      username and password credentials.  Upon successful authentication,
+      this module will return the session-token that is required by all
+      subsequent AOS module usage.
+requirements:
+    - aos-pyez
+options:
+    server:
+        description:
+            - Set to {{ inventory_hostname }}
+        required: true
+    port:
+        description:
+            - port number to use when connecting to the device
+        required: false
+    user:
+        description:
+            - Login username
+        required: false
+        default: admin
+    passwd:
+        description:
+            - Login password
+        required: false
+        default: admin
+'''
+
+EXAMPLES = '''
+- aos_login: server={{ inventory_hostname }} user=admin passwd=admin
+  register: aos
+
+'''
+
+from apstra.aoscp.session import Session
+import apstra.aoscp.exc as AosExc
+from ansible.module_utils.basic import AnsibleModule
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            server=dict(required=True),
+            port=dict(required=False),
+            user=dict(required=False, default='admin'),
+            passwd=dict(required=False, default='admin')))
+
+    mod_args = module.params
+    aos = Session(server=mod_args['server'], port=mod_args['port'],
+                  user=mod_args['user'], passwd=mod_args['passwd'])
+
+    try:
+        aos.login()
+
+    except AosExc.LoginServerUnreachableError:
+        module.fail_json(
+            msg="AOS-server [%s] API not available/reachable, check server" % aos.server)
+    except AosExc.LoginAuthError as exc:
+        module.fail_json(msg="AOS-server login credentials failed")
+
+    module.exit_json(
+        changed=False,
+        session=dict(url=aos.api.url, headers=aos.api.headers)
+    )
+
+main()

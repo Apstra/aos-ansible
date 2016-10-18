@@ -1,0 +1,78 @@
+#!/usr/bin/env python
+
+from ansible.module_utils.basic import AnsibleModule
+
+from apstra.aoscp.session import Session
+from apstra.aoscp.exc import LoginError, SessionError
+
+
+def create_blueprint(aos, blueprint, module):
+    margs = module.params
+
+    try:
+        template_id = aos.DesignTemplates[margs['design_template']].id
+        blueprint.create(template_id, reference_arch=margs['reference_arch'])
+
+    except SessionError as exc:
+        msg = 'likely missing dependencies' if 'UNPROCESSABLE ENTITY' in exc.message \
+            else exc.message
+
+        module.fail_json(msg="unable to create blueprint: %s" % msg)
+
+    module.exit_json(changed=True, contents=blueprint.contents)
+
+
+def ensure_absent(aos, blueprint, module):
+    if not blueprint.exists:
+        module.exit_json(changed=False)
+
+    try:
+        del blueprint.contents
+    except SessionError as exc:
+        module.fail_json(msg='unable to delete blueprint, %s' % exc.message)
+
+    module.exit_json(changed=True)
+
+
+def ensure_present(aos, blueprint, module):
+    margs = module.params
+
+    if blueprint.exists:
+        module.exit_json(changed=False, contents=blueprint.contents)
+
+    if margs['design_template'] and margs['reference_arch']:
+        create_blueprint(aos, blueprint, module)
+
+    module.fail_json(msg='blueprint %s does not exist' % blueprint.name)
+
+
+def main():
+    module = AnsibleModule(
+        argument_spec=dict(
+            session=dict(required=True, type="dict"),
+            name=dict(required=True),
+            state=dict(choices=['present', 'absent'], default='present'),
+            design_template=dict(required=False),
+            reference_arch=dict(required=False)
+        ))
+
+    margs = module.params
+    auth = margs['session']
+    aos, blueprint = None, None
+
+    try:
+        aos = Session()
+        aos.api.resume(url=auth['url'], headers=auth['headers'])
+    except LoginError as exc:
+        module.fail_json(msg='Unable to login to AOS API: %s' % str(exc))
+
+    blueprint = aos.Blueprints[margs['name']]
+
+    {
+        'absent': ensure_absent,
+        'present': ensure_present
+    }.get(margs['state'])(
+        aos, blueprint, module)
+
+
+main()

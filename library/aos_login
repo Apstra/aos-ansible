@@ -61,7 +61,7 @@ def main():
 
     except AosExc.LoginServerUnreachableError:
         module.fail_json(
-            msg="AOS-server [%s] not reachable, check server value" % mod_args['server'])
+            msg="AOS-server [%s] API not available/reachable, check server" % aos.server)
     except AosExc.LoginAuthError as exc:
         module.fail_json(msg="AOS-server login credentials failed")
 

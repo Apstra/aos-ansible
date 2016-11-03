@@ -1,14 +1,18 @@
 #!/usr/bin/env python
+# Copyright 2014-present, Apstra, Inc. All rights reserved.
+#
+# This source code is licensed under End User License Agreement found in the
+# LICENSE file at http://www.apstra.com/community/eula
 
 import json
 
 from ansible.module_utils.basic import AnsibleModule
 
-from apstra.aoscp.session import Session
-from apstra.aoscp.exc import LoginError, SessionError
+from apstra.aosom.session import Session
+from apstra.aosom.exc import LoginError, SessionError
 
-from apstra.aoscp.collection import CollectionValueTransformer
-from apstra.aoscp.collection import CollectionValueMultiTransformer
+from apstra.aosom.collection import CollectionValueTransformer
+from apstra.aosom.collection import CollectionValueMultiTransformer
 
 def main():
     module = AnsibleModule(

@@ -10,6 +10,49 @@ from apstra.aosom.session import Session
 from apstra.aosom.exc import LoginError, SessionError
 
 
+DOCUMENTATION = '''
+---
+module: aos_blueprint
+author: Apstra, Inc.
+version_added: "1.0.0"
+short_description: AOS blueprint module
+description:
+    - Provides a number of different actions to interact with an AOS blueprint instance, these include:
+        * create a new blueprint
+        * delete a blueprint
+        * configure blueprint parameters
+        * obtain blueprint content (large 'JSON' data structure)
+        * check for blueprint build errors; await build ready
+
+requirements:
+    - aos-pyez>=0.4.0
+
+options:
+    session:
+        description:
+            - An existing AOS session, as provided from aos_login module
+        required: true
+    name:
+        description:
+            - The blueprint name
+        required: true
+    state:
+        description:
+            - 'present': ensures that the named blueprint exists
+            - 'absent': ensures that the named blueprint does not exist
+            - 'build-ready': ensures that the named blueprint is fully parameter-configured; i.e.
+              does not include specific device assignment
+        required: false
+        default: present
+'''
+
+EXAMPLES = '''
+- aos_blueprint:
+    session: "{{ aos.session }}"
+    name: demo-L3pod
+'''
+
+
 def create_blueprint(aos, blueprint, module):
     margs = module.params
 
@@ -50,12 +93,28 @@ def ensure_present(aos, blueprint, module):
     module.fail_json(msg='blueprint %s does not exist' % blueprint.name)
 
 
+def ensure_build_ready(aos, blueprint, module):
+    margs = module.params
+
+    if not blueprint.exists:
+        module.fail_json(msg='blueprint %s does not exist' % blueprint.name)
+
+    if blueprint.await_build_ready(timeout=margs['timeout']*1000):
+        module.exit_json(contents=blueprint.contents)
+    else:
+        module.fail_json(msg='blueprint %s has build errors',
+                         build_erros=blueprint.build_errors)
+
+
 def main():
     module = AnsibleModule(
         argument_spec=dict(
             session=dict(required=True, type="dict"),
             name=dict(required=True),
-            state=dict(choices=['present', 'absent'], default='present'),
+            state=dict(choices=[
+                'present', 'absent', 'build-ready'],
+                default='present'),
+            timeout=dict(type="int", default=5),
             design_template=dict(required=False),
             reference_arch=dict(required=False)
         ))
@@ -74,9 +133,10 @@ def main():
 
     {
         'absent': ensure_absent,
-        'present': ensure_present
-    }.get(margs['state'])(
-        aos, blueprint, module)
+        'present': ensure_present,
+        'build-ready': ensure_build_ready
+
+    }.get(margs['state'])(aos, blueprint, module)
 
 
 main()

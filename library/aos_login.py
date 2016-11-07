@@ -7,7 +7,7 @@
 DOCUMENTATION = '''
 ---
 module: aos_login
-author: Jeremy Schulman (@jeremyschulman)
+author: jeremy@apstra.com (community@apstra.com)
 version_added: "2.3"
 short_description: Login to AOS server for session token
 description:
@@ -39,18 +39,29 @@ options:
 '''
 
 EXAMPLES = '''
-- aos_login: server={{ inventory_hostname }} user=admin passwd=admin
-  register: aos
+# create a session with the AOS-server
 
+- aos_login:
+    server: "{{ inventory_hostname }}"
+    user: admin
+    passwd: admin
+
+# now use that aos_session with other AOS modules, e.g.:
+
+- aos_blueprint:
+    session: "{{ aos_session }}"
+    name: my-blueprint
+    state: present
 '''
 
 RETURNS = '''
-aos-session:
+aos_session:
   description: Authenticated session information
   retured: always
   type: dict
   sample: { 'url': <str>, 'headers': {...} }
 '''
+
 from ansible.module_utils.basic import AnsibleModule
 
 try:
@@ -69,13 +80,14 @@ def main():
             user=dict(default='admin'),
             passwd=dict(default='admin', no_log=True)))
 
-    mod_args = module.params
-    aos = Session(server=mod_args['server'], port=mod_args['port'],
-                  user=mod_args['user'], passwd=mod_args['passwd'])
-
     if not HAS_AOS_PYEZ:
         module.fail_json(msg='aos-pyez is not installed.  Please see details '
                              'here: https://github.com/Apstra/aos-pyez')
+
+    mod_args = module.params
+
+    aos = Session(server=mod_args['server'], port=mod_args['port'],
+                  user=mod_args['user'], passwd=mod_args['passwd'])
 
     try:
         aos.login()
@@ -83,15 +95,14 @@ def main():
     except aosexc.LoginServerUnreachableError:
         module.fail_json(
             msg="AOS-server [%s] API not available/reachable, check server" % aos.server)
+
     except aosexc.LoginAuthError:
         module.fail_json(msg="AOS-server login credentials failed")
 
-    aos_session = dict(url=aos.api.url, headers=aos.api.headers)
-
     module.exit_json(
         changed=False,
-        ansible_facts=dict(aos_session=aos_session)
-    )
+        ansible_facts=dict(
+            aos_session=dict(url=aos.api.url, headers=aos.api.headers)))
 
 if __name__ == '__main__':
     main()

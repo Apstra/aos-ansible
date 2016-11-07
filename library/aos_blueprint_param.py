@@ -8,11 +8,15 @@ import json
 
 from ansible.module_utils.basic import AnsibleModule
 
-from apstra.aosom.session import Session
-from apstra.aosom.exc import LoginError, SessionError
+try:
+    from apstra.aosom.session import Session
+    from apstra.aosom.exc import LoginError, SessionError
+    from apstra.aosom.collection import CollectionValueTransformer
+    from apstra.aosom.collection import CollectionValueMultiTransformer
+    HAS_AOS_PYEZ = True
+except ImportError:
+    HAS_AOS_PYEZ = False
 
-from apstra.aosom.collection import CollectionValueTransformer
-from apstra.aosom.collection import CollectionValueMultiTransformer
 
 def main():
     module = AnsibleModule(
@@ -24,6 +28,10 @@ def main():
             param_value=dict(required=True, type="dict"),
             state=dict(choices=['present', 'absent', 'merged'], default='present'))
     )
+
+    if not HAS_AOS_PYEZ:
+        module.fail_json(msg='aos-pyez is not installed.  Please see details '
+                             'here: https://github.com/Apstra/aos-pyez')
 
     margs = module.params
     auth = margs['session']
@@ -63,4 +71,5 @@ def main():
     module.exit_json(changed=True)
 
 
-main()
+if __name__ == '__main__':
+    main()

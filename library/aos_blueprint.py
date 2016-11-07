@@ -6,8 +6,12 @@
 
 from ansible.module_utils.basic import AnsibleModule
 
-from apstra.aosom.session import Session
-from apstra.aosom.exc import LoginError, SessionError
+try:
+    from apstra.aosom.session import Session
+    from apstra.aosom.exc import LoginError, SessionError
+    HAS_AOS_PYEZ = True
+except ImportError:
+    HAS_AOS_PYEZ = False
 
 
 DOCUMENTATION = '''
@@ -119,6 +123,10 @@ def main():
             reference_arch=dict(required=False)
         ))
 
+    if not HAS_AOS_PYEZ:
+        module.fail_json(msg='aos-pyez is not installed.  Please see details '
+                             'here: https://github.com/Apstra/aos-pyez')
+
     margs = module.params
     auth = margs['session']
     aos, blueprint = None, None
@@ -139,4 +147,5 @@ def main():
     }.get(margs['state'])(aos, blueprint, module)
 
 
-main()
+if __name__ == '__main__':
+    main()

@@ -8,8 +8,12 @@ import json
 
 from ansible.module_utils.basic import AnsibleModule
 
-from apstra.aosom.session import Session
-from apstra.aosom.exc import SessionRqstError
+try:
+    from apstra.aosom.session import Session
+    from apstra.aosom.exc import SessionRqstError
+    HAS_AOS_PYEZ = True
+except ImportError:
+    HAS_AOS_PYEZ = False
 
 
 def do_backup_resource(module, resources):
@@ -72,6 +76,10 @@ def main():
             backup=dict(require=False)
         )
     )
+
+    if not HAS_AOS_PYEZ:
+        module.fail_json(msg='aos-pyez is not installed.  Please see details '
+                             'here: https://github.com/Apstra/aos-pyez')
 
     margs = module.params
     auth = margs['session']

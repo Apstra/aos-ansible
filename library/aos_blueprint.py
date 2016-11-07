@@ -4,19 +4,10 @@
 # This source code is licensed under End User License Agreement found in the
 # LICENSE file at http://www.apstra.com/community/eula
 
-from ansible.module_utils.basic import AnsibleModule
-
-try:
-    from apstra.aosom.session import Session
-    from apstra.aosom.exc import LoginError, SessionError
-    HAS_AOS_PYEZ = True
-except ImportError:
-    HAS_AOS_PYEZ = False
-
 DOCUMENTATION = '''
 ---
 module: aos_blueprint
-author: jeremy@apstra.com (community@apstra.com)
+author: jeremy@apstra.com (@jeremyschulman)
 version_added: "2.3"
 short_description: Manage AOS blueprint instance
 description:
@@ -90,6 +81,15 @@ build_errors:
   type: list
   sample: [{...}, {...}]
 '''
+
+from ansible.module_utils.basic import AnsibleModule
+
+try:
+    from apstra.aosom.session import Session
+    from apstra.aosom.exc import LoginError, SessionError
+    HAS_AOS_PYEZ = True
+except ImportError:
+    HAS_AOS_PYEZ = False
 
 
 def create_blueprint(aos, blueprint, module):

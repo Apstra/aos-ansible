@@ -4,21 +4,10 @@
 # This source code is licensed under End User License Agreement found in the
 # LICENSE file at http://www.apstra.com/community/eula
 
-import json
-
-from ansible.module_utils.basic import AnsibleModule
-
-try:
-    from apstra.aosom.session import Session
-    from apstra.aosom.exc import SessionRqstError
-    HAS_AOS_PYEZ = True
-except ImportError:
-    HAS_AOS_PYEZ = False
-
 DOCUMENTATION = '''
 ---
 module: aos_collection
-author: jeremy@apstra.com (community@apstra.com)
+author: jeremy@apstra.com (@jeremyschulman)
 version_added: "2.3"
 short_description: Manage AOS collections
 description:
@@ -80,6 +69,18 @@ item_id:
   type: str
   sample: fcc4ac1c-e249-4fe7-b458-2138bfb44c06
 '''
+
+import json
+
+from ansible.module_utils.basic import AnsibleModule
+
+try:
+    from apstra.aosom.session import Session
+    from apstra.aosom.exc import SessionRqstError
+    HAS_AOS_PYEZ = True
+except ImportError:
+    HAS_AOS_PYEZ = False
+
 
 def do_backup_resource(module, resources):
     margs = module.params

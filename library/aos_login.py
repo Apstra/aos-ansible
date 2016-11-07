@@ -7,7 +7,7 @@
 DOCUMENTATION = '''
 ---
 module: aos_login
-author: jeremy@apstra.com (community@apstra.com)
+author: jeremy@apstra.com (@jeremyschulman)
 version_added: "2.3"
 short_description: Login to AOS server for session token
 description:

@@ -17,6 +17,42 @@ try:
 except ImportError:
     HAS_AOS_PYEZ = False
 
+DOCUMENTATION = '''
+---
+module: aos_blueprint_param
+author: jeremy@apstra.com (community@apstra.com)
+version_added: "2.3"
+short_description: Manage AOS blueprint parameter values
+description:
+requirements:
+  - aos-pyez
+options:
+  session:
+    description:
+      - An existing AOS session as obtained by aos_login module
+    required: true
+  blueprint_name:
+    description:
+      - Blueprint user-defined name
+    required: true
+  param_name:
+    description:
+      - Name of blueprint parameter, as defined by AOS design template
+    required: true
+  param_value:
+    description:
+      - blueprint parameter value.  This value may be transformed by using the
+        param_map field; used when the caller provides a user-defined item-name
+        and the blueprint param requires an AOS unique ID value.
+    required: true
+  param_map:
+    description:
+      - defines the aos-pyez collection that will is used to map the user-defined
+        item name into the AOS unique ID value.  For example, if the caller
+        provides an IP address pool (param_value) called "Server-IpAddrs", then
+        the aos-pyez collection is 'IpPools'.
+    required: false
+'''
 
 def main():
     module = AnsibleModule(

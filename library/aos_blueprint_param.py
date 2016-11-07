@@ -4,15 +4,56 @@
 # This source code is licensed under End User License Agreement found in the
 # LICENSE file at http://www.apstra.com/community/eula
 
+DOCUMENTATION = '''
+---
+module: aos_blueprint_param
+author: jeremy@apstra.com (@jeremyschulman)
+version_added: "2.3"
+short_description: Manage AOS blueprint parameter values
+description:
+requirements:
+  - aos-pyez
+options:
+  session:
+    description:
+      - An existing AOS session as obtained by aos_login module
+    required: true
+  blueprint_name:
+    description:
+      - Blueprint user-defined name
+    required: true
+  param_name:
+    description:
+      - Name of blueprint parameter, as defined by AOS design template
+    required: true
+  param_value:
+    description:
+      - blueprint parameter value.  This value may be transformed by using the
+        param_map field; used when the caller provides a user-defined item-name
+        and the blueprint param requires an AOS unique ID value.
+    required: true
+  param_map:
+    description:
+      - defines the aos-pyez collection that will is used to map the user-defined
+        item name into the AOS unique ID value.  For example, if the caller
+        provides an IP address pool (param_value) called "Server-IpAddrs", then
+        the aos-pyez collection is 'IpPools'.
+    required: false
+'''
+
 import json
 
 from ansible.module_utils.basic import AnsibleModule
 
-from apstra.aosom.session import Session
-from apstra.aosom.exc import LoginError, SessionError
+try:
+    from apstra.aosom.session import Session
+    from apstra.aosom.exc import LoginError, SessionError
+    from apstra.aosom.collection import CollectionValueTransformer
+    from apstra.aosom.collection import CollectionValueMultiTransformer
+    HAS_AOS_PYEZ = True
+except ImportError:
+    HAS_AOS_PYEZ = False
 
-from apstra.aosom.collection import CollectionValueTransformer
-from apstra.aosom.collection import CollectionValueMultiTransformer
 
 def main():
     module = AnsibleModule(
@@ -24,6 +65,10 @@ def main():
             param_value=dict(required=True, type="dict"),
             state=dict(choices=['present', 'absent', 'merged'], default='present'))
     )
+
+    if not HAS_AOS_PYEZ:
+        module.fail_json(msg='aos-pyez is not installed.  Please see details '
+                             'here: https://github.com/Apstra/aos-pyez')
 
     margs = module.params
     auth = margs['session']
@@ -63,4 +108,5 @@ def main():
     module.exit_json(changed=True)
 
 
-main()
+if __name__ == '__main__':
+    main()

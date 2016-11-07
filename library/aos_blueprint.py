@@ -13,47 +13,82 @@ try:
 except ImportError:
     HAS_AOS_PYEZ = False
 
-
 DOCUMENTATION = '''
 ---
 module: aos_blueprint
-author: Apstra, Inc.
-version_added: "1.0.0"
-short_description: AOS blueprint module
+author: jeremy@apstra.com (community@apstra.com)
+version_added: "2.3"
+short_description: Manage AOS blueprint instance
 description:
-    - Provides a number of different actions to interact with an AOS blueprint instance, these include:
-        * create a new blueprint
-        * delete a blueprint
-        * configure blueprint parameters
-        * obtain blueprint content (large 'JSON' data structure)
-        * check for blueprint build errors; await build ready
-
+    - Create a new blueprint instance
+    - Delete a blueprint instance
+    - Retrieve blueprint contents data-dictionary
+    - Await blueprint build-ready status, obtain contents data-dictionary
 requirements:
-    - aos-pyez>=0.4.0
-
+  - aos-pyez
 options:
-    session:
-        description:
-            - An existing AOS session, as provided from aos_login module
-        required: true
-    name:
-        description:
-            - The blueprint name
-        required: true
-    state:
-        description:
-            - 'present': ensures that the named blueprint exists
-            - 'absent': ensures that the named blueprint does not exist
-            - 'build-ready': ensures that the named blueprint is fully parameter-configured; i.e.
-              does not include specific device assignment
-        required: false
-        default: present
+  session:
+    description:
+      - An existing AOS session as obtained by aos_login module
+    required: true
+  name:
+    description:
+      - Blueprint user-defined name
+    required: true
+  state:
+    description:
+      - Expected blueprint state
+    choices: ['present', 'absent', 'build-ready']
+    default: present
+  timeout:
+    description:
+      - When state='build-ready', this timeout identifies timeout in seconds to wait before
+        declaring a failure
+  design_template:
+    description:
+      - When creating a blueprint, this value identifies, by user-name, an existing engineering
+        design template within the AOS-server
+    required: false
+  reference_arch:
+     description:
+        - When creating a blueprint, this value identifies a known AOS reference
+          architecture value.  Refer to AOS-server documentation for available values.
 '''
 
 EXAMPLES = '''
-- aos_blueprint:
-    session: "{{ aos.session }}"
-    name: demo-L3pod
+- name: Creating blueprint {{ blueprint_name }}
+  aos_blueprint:
+    session: "{{aos_session}}"
+    name: "{{ blueprint_name }}"
+    design_template: "{{ blueprint_template }}"
+    reference_arch: two_stage_l3clos
+
+- name: Deleting blueprint
+  aos_blueprint:
+    session: "{{aos_session}}"
+    name: "{{ blueprint_name }}"
+    state: absent
+
+- name: Await blueprint build-ready, and obtain contents
+  aos_blueprint:
+    session: "{{aos_session}}"
+    name: "{{ blueprint_name }}"
+    state: build-ready
+  register: bp
+'''
+
+RETURNS = '''
+contents:
+  description: Blueprint contents data-dictionary
+  returned: always
+  type: dict
+  sample: { ... }
+
+build_errors:
+  description: When state='build-ready', and build errors exist, this contains list of errors
+  returned: only when build-ready returns fail
+  type: list
+  sample: [{...}, {...}]
 '''
 
 

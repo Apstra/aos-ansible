@@ -82,7 +82,15 @@ def main():
 
     try:
         blueprint = aos.Blueprints[margs['blueprint_name']]
+
+        if not blueprint.exists:
+            module.fail_json(msg='blueprint %s does not exist.\n'
+                                 'known blueprints are [%s]'%
+                                 (margs['blueprint_name'],
+                                  ','.join(aos.Blueprints.names)))
+
         param = blueprint.params[margs['param_name']]
+
     except SessionError as exc:
         module.fail_json(msg='unable to access param %s: %s' %
                              (margs['param_name'], str(exc)))

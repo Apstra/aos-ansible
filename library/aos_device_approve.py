@@ -6,13 +6,13 @@
 
 DOCUMENTATION = '''
 ---
-module: aos_collection
+module: aos_device_approve
 author: jeremy@apstra.com (@jeremyschulman)
 version_added: "2.3"
 short_description: Manage AOS collections
 description:
-  - Used to add a collection item to AOS-server from a JSON file
-  - Used to backup a collection item to JSON file
+  - Used to approve a device that is currently in the "Quarantined" state.
+  - Also can be used to assign the location property
 requirements:
   - aos-pyez
 options:
@@ -20,57 +20,25 @@ options:
     description:
       - An existing AOS session as obtained by aos_login module
     required: true
-  collection:
-    description:
-      - A specific collection name.  The list of available collection
-        names depends on the AOS version.  See aos-pyez documentation for details.
-    required: true
-  src:
-    description:
-      - filepath to JSON file containing the collection item data
-    required: false
   name:
     description:
-      - collection item name, used in conjunction with the dest parameter
-    required: false
+      - The device serial-number; i.e. uniquely identifies the device in the
+        AOS system
+    required: true
   dest:
-    description:
-        - filepath to JSON file that will store the collection item data
+    location:
+        - User defined location property
     required: false
 '''
 
 EXAMPLES = '''
 # add an IP address pool to AOS-server
 
-- aos_collection:
+- aos_device_approve:
     session: "{{ aos_session }}"
-    collection: IpPools
-    src: resources/ip-pools/dc1_switches.json
-
-# backup an IP address from AOS-server to local file
-
-- aos_collection:
-    session: "{{ aos_session }}"
-    collection: IpPools
-    name: Switches-IpAddrs
-    dest: resources/ip-pools/dc1_switches.json
+    name: D2060B2F105429GDABCD123
+    location: "rack-45, ru-18"
 '''
-
-RETURNS = '''
-item_name:
-  description: user-name given to item
-  retured: always
-  type: str
-  sample: Server-IpAddrs
-
-item_id:
-  description: AOS unique ID assigned to item
-  returned: always
-  type: str
-  sample: fcc4ac1c-e249-4fe7-b458-2138bfb44c06
-'''
-
-import json
 
 from ansible.module_utils.basic import AnsibleModule
 
@@ -105,7 +73,7 @@ def main():
 
     dev = aos.Devices[margs['name']]
     if not dev.exists:
-        module.fail_json(msg="unknown device '%s'" %margs['name'])
+        module.fail_json(msg="unknown device '%s'" % margs['name'])
 
     if dev.is_approved:
         module.exit_json(changed=False)

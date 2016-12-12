@@ -48,8 +48,8 @@ from ansible.module_utils.basic import AnsibleModule
 try:
     from apstra.aosom.session import Session
     from apstra.aosom.exc import LoginError, SessionError
-    from apstra.aosom.collection import CollectionValueTransformer
-    from apstra.aosom.collection import CollectionValueMultiTransformer
+    from apstra.aosom.valuexf import CollectionValueTransformer
+    from apstra.aosom.valuexf import CollectionValueMultiTransformer
     HAS_AOS_PYEZ = True
 except ImportError:
     HAS_AOS_PYEZ = False

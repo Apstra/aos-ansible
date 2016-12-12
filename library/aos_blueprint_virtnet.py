@@ -13,7 +13,7 @@ from ansible.module_utils.basic import AnsibleModule
 try:
     from apstra.aosom.session import Session
     from apstra.aosom.exc import LoginError, SessionRqstError
-    from apstra.aosom.amods.virtnets import VirtualNetworks
+    from apstra.aosom.session_modules.virtnets import VirtualNetworks
     HAS_AOS_PYEZ = True
 except ImportError:
     HAS_AOS_PYEZ = False

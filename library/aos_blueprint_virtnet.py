@@ -36,6 +36,9 @@ def ensure_present(module, blueprint):
 
     this_vnet = blueprint.VirtualNetworks[name]
     if this_vnet.exists:
+        # TODO - it's possible that the user is providing new
+        # vnet data, but here we are ignoring it.  need to handle
+        # this use-case better
         module.exit_json(changed=False, contents=this_vnet.value)
 
     try:

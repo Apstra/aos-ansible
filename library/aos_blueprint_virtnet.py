@@ -13,7 +13,6 @@ from ansible.module_utils.basic import AnsibleModule
 try:
     from apstra.aosom.session import Session
     from apstra.aosom.exc import LoginError, SessionRqstError
-    from apstra.aosom.amods.virtnets import VirtualNetworks
     HAS_AOS_PYEZ = True
 except ImportError:
     HAS_AOS_PYEZ = False
@@ -34,11 +33,12 @@ def ensure_present(module, blueprint):
                              (src_file, exc.message))
 
     name = datum['display_name']
-    vnets = VirtualNetworks(blueprint)
-    vnets.digest()
-    this_vnet = vnets[name]
 
+    this_vnet = blueprint.VirtualNetworks[name]
     if this_vnet.exists:
+        # TODO - it's possible that the user is providing new
+        # vnet data, but here we are ignoring it.  need to handle
+        # this use-case better
         module.exit_json(changed=False, contents=this_vnet.value)
 
     try:
@@ -47,8 +47,7 @@ def ensure_present(module, blueprint):
         module.fail_json(msg="umable to create virtual-network '%s': '%s'" %
                              (name, exc.message))
 
-    vnets.digest()
-    module.exit_json(changed=True, contents=vnets[name].value)
+    module.exit_json(changed=True, contents=this_vnet.read())
 
 
 def ensure_absent(module, blueprint):

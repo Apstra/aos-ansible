@@ -1,0 +1,294 @@
+
+---
+- name: Test aos_ip_pool module
+  hosts: aos-server
+  connection: local
+  gather_facts: no
+  vars:
+    session_wrong_token:
+      headers:
+        AUTHTOKEN: XXX
+      url: http://172.20.52.3:8888/api
+    session_ok:
+      headers:
+        AUTHTOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY3JlYXRlZF9hdCI6IjIwMTctMDItMDFUMDA6NDY6NTUuMjI1NjIzWiIsInNlc3Npb24iOiI1M2U2MDRjMi0wNTg4LTRmOGItYmJkZC1hYmQ4ODRiZDhkMDgifQ.K7I3Fag0FfhxPCoYJVoKgo4As6ySHygxxKgImJxfp1k
+      url: http://172.20.52.3:8888/api
+
+  tasks:
+#-------------------------------------------------------
+# TESTS 100 - Wrong Inputs
+#-------------------------------------------------------
+    - name: "TEST 101 - Session is mandatory"
+      aos_ip_pool:
+        name: "my-ip-pool"
+        subnets: [ 172.10.0.0/16 ]
+        state: present
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+    - name: Check TEST 101
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('missing required arguments') != -1"
+#-------------------------------------------------------
+    - name: "TEST 102 - Name and ID are mutually exclusive"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        name: "myName"
+        id: "myID"
+        subnets: [ 172.10.0.0/16 ]
+        state: present
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test102
+    - name: Check TEST 102
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('parameters are mutually exclusive') != -1"
+#-------------------------------------------------------
+    - name: "TEST 103 - Session is a dict"
+      aos_ip_pool:
+        session: "my-session"
+        name: "my-ip-pool"
+        subnets: [ 172.10.0.0/16 ]
+        state: present
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+    - name: Check TEST 103
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('argument session is of type') != -1"
+# #-------------------------------------------------------
+#
+#     - name: "TEST 104 - Session is not valid"
+#       aos_ip_pool:
+#         session: "{{ session_wrong_token }}"
+#         name: "my-ip-pool"
+#         subnets: [ 172.10.0.0/16 ]
+#         state: present
+#       register: test
+#       ignore_errors: True
+#
+#     - debug: var=test
+#     - name: Check TEST 104
+#       assert:
+#         that:
+#           - test|failed
+#           #- "test.msg.find('argument session is of type') != -1"
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+# TESTS 200 - Valid Inputs
+#-------------------------------------------------------
+
+    - name: "SETUP 200 - Cleanup existing server"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        name: "my-ip-pool"
+        state: absent
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+
+    - name: Check TEST 200
+      assert:
+        that:
+          - test|success
+
+#-------------------------------------------------------
+    - name: "TEST 201 - Create IP Pool - Check mode 1/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        name: "my-ip-pool"
+        subnets: [ 172.10.0.0/16 ]
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 201
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 202 - Create IP Pool - Check mode 2/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        name: "my-ip-pool"
+        subnets: [ 172.10.0.0/16 ]
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 202
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 203 - Create IP Pool - 1/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        name: "my-ip-pool"
+        subnets: [ 172.10.0.0/16 ]
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 203
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 204 - Create IP Pool - 2/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        name: "my-ip-pool"
+        subnets: [ 172.10.0.0/16 ]
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 204
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 205 - Create IP Pool - Check mode when exist"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        name: "my-ip-pool"
+        subnets: [ 172.10.0.0/16 ]
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 205
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 206 - Delete IP Pool - Check mode when exist"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        name: "my-ip-pool"
+        subnets: [ 172.10.0.0/16 ]
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 206
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 207 - Delete IP Pool - 1/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        name: "my-ip-pool"
+        subnets: [ 172.10.0.0/16 ]
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 207
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 208 - Delete IP Pool - 2/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        name: "my-ip-pool"
+        subnets: [ 172.10.0.0/16 ]
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 208
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 209 - Delete IP Pool - Check mode when absent"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        name: "my-ip-pool"
+        subnets: [ 172.10.0.0/16 ]
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 209
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+    # - debug: var=test1
+    #
+    # - name: "TEST 2 - Delete IP Pool (again)"
+    #   aos_ip_pool:
+    #     session: "{{ session }}"
+    #     name: "my-ip-pool"
+    #     state: absent
+    #   register: test2
+    #   ignore_errors: True
+    #
+    # - debug: var=test2
+    #
+    # - name: "TEST 3 - Create IP Pool"
+    #   aos_ip_pool:
+    #     session: "{{ session }}"
+    #     name: "my-ip-pool"
+    #     subnets: [ 172.10.0.0/16 ]
+    #     state: present
+    #   register: test3
+    #   ignore_errors: True
+    #
+    # - debug: var=test3
+    # # - name: Check TEST 1
+    # #   assert:
+    # #     that:
+    # #       - test1.packet_loss == '0'
+    #
+    # - name: "TEST 4 - Create IP Pool Again"
+    #   aos_ip_pool:
+    #     session: "{{ session }}"
+    #     name: "my-ip-pool"
+    #     subnets: [ 172.10.0.0/16 ]
+    #     state: present
+    #   register: test4
+    #   ignore_errors: True
+    #
+    # - debug: var=test4

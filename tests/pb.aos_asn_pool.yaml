@@ -1,0 +1,328 @@
+
+---
+- name: Test aos_asn_pool module
+  hosts: aos-server
+  connection: local
+  gather_facts: no
+  vars:
+    session_wrong_token:
+      headers:
+        AUTHTOKEN: XXX
+      url: http://172.20.52.3:8888/api
+    session_ok:
+      headers:
+        AUTHTOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY3JlYXRlZF9hdCI6IjIwMTctMDItMDFUMDA6NDY6NTUuMjI1NjIzWiIsInNlc3Npb24iOiI1M2U2MDRjMi0wNTg4LTRmOGItYmJkZC1hYmQ4ODRiZDhkMDgifQ.K7I3Fag0FfhxPCoYJVoKgo4As6ySHygxxKgImJxfp1k
+      url: http://172.20.52.3:8888/api
+
+  tasks:
+#-------------------------------------------------------
+# TESTS 100 - Wrong Inputs
+#-------------------------------------------------------
+    - name: "TEST 101 - Session is mandatory"
+      aos_asn_pool:
+        name: "my-asn-pool"
+        state: present
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+    - name: Check TEST 101
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('missing required arguments') != -1"
+#-------------------------------------------------------
+    - name: "TEST 102 - Name and ID are mutually exclusive"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "myName"
+        id: "myID"
+        state: present
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test102
+    - name: Check TEST 102
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('parameters are mutually exclusive') != -1"
+#-------------------------------------------------------
+    - name: "TEST 103 - Session is a dict"
+      aos_asn_pool:
+        session: "my-session"
+        name: "my-asn-pool"
+        state: present
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+    - name: Check TEST 103
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('argument session is of type') != -1"
+#-------------------------------------------------------
+    - name: "SETUP 104 - Check range is a list"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        ranges:
+          - [10, 20]
+          - not a list
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+
+    - name: Check TEST 104
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('must be a list not') != -1"
+#-------------------------------------------------------
+    - name: "SETUP 105 - Check range have only 2 value"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        ranges:
+          - [10, 20, 30 ]
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+
+    - name: Check TEST 105
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('must be a list of 2') != -1"
+
+#-------------------------------------------------------
+    - name: "SETUP 106 - Check range is composed of 2 Integer 1/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        ranges:
+          - [10, test ]
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+
+    - name: Check TEST 106
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('2nd element of range (1) must be integer') != -1"
+
+#-------------------------------------------------------
+    - name: "SETUP 107 - Check range is composed of 2 Integer 2/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        ranges:
+          - [ 5, 10 ]
+          - [not_int, 20 ]
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+
+    - name: Check TEST 107
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('1st element of range (2) must be integer') != -1"
+#-------------------------------------------------------
+    - name: "SETUP 108 - Range, 2nd must be bigger than 1st"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        ranges:
+          - [ 5, 10 ]
+          - [ 30, 20 ]
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+
+    - name: Check TEST 108
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('must be bigger than 1st') != -1"
+
+#-------------------------------------------------------
+
+#-------------------------------------------------------
+# TESTS 200 - Valid Inputs
+#-------------------------------------------------------
+
+    - name: "SETUP 200 - Cleanup existing server"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        state: absent
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+
+    - name: Check TEST 200
+      assert:
+        that:
+          - test|success
+
+#-------------------------------------------------------
+    - name: "TEST 201 - Create ASN Pool - Check mode 1/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        ranges:
+          - [ 100, 200 ]
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 201
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 202 - Create ASN Pool - Check mode 2/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        ranges:
+          - [ 100, 200 ]
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 202
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 203 - Create ASN Pool - 1/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        ranges:
+          - [ 100, 200 ]
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 203
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 204 - Create ASN Pool - 2/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        ranges:
+          - [ 100, 200 ]
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 204
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 205 - Create ASN Pool - Check mode when exist"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        ranges:
+          - [ 100, 200 ]
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 205
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 206 - Delete ASN Pool - Check mode when exist"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 206
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 207 - Delete ASN Pool - 1/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 207
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 208 - Delete ASN Pool - 2/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 208
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 209 - Delete ASN Pool - Check mode when absent"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 209
+      assert:
+        that:
+          - test|success
+          - not test|changed

@@ -8,13 +8,33 @@
     session_wrong_token:
       headers:
         AUTHTOKEN: XXX
-      url: http://172.20.52.3:8888/api
-    session_ok:
-      headers:
-        AUTHTOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY3JlYXRlZF9hdCI6IjIwMTctMDItMDFUMDA6NDY6NTUuMjI1NjIzWiIsInNlc3Npb24iOiI1M2U2MDRjMi0wNTg4LTRmOGItYmJkZC1hYmQ4ODRiZDhkMDgifQ.K7I3Fag0FfhxPCoYJVoKgo4As6ySHygxxKgImJxfp1k
-      url: http://172.20.52.3:8888/api
-
+      url: http://{{address}}:{{port}}/api
   tasks:
+#-------------------------------------------------------
+# TESTS 000 - Open Session
+#-------------------------------------------------------
+    - name: Open Session on AOS Server
+      uri:
+        url: "http://{{address}}:{{port}}/api/user/login"
+        method: POST
+        status_code: 201
+        HEADER_Content-Type: 'application/json'
+        HEADER_Accept: 'application/json'
+        body: >
+          {
+            "username": "{{username}}",
+            "password": "{{password}}"
+          }
+        body_format: json
+      register: session
+
+    - name: Format token into session_ok variable
+      set_fact:
+        session_ok:
+          url: http://{{address}}:{{port}}/api
+          headers:
+            AUTHTOKEN: "{{session.json.token}}"
+
 #-------------------------------------------------------
 # TESTS 100 - Wrong Inputs
 #-------------------------------------------------------
@@ -65,24 +85,23 @@
         that:
           - test|failed
           - "test.msg.find('argument session is of type') != -1"
-# #-------------------------------------------------------
-#
-#     - name: "TEST 104 - Session is not valid"
-#       aos_ip_pool:
-#         session: "{{ session_wrong_token }}"
-#         name: "my-ip-pool"
-#         subnets: [ 172.10.0.0/16 ]
-#         state: present
-#       register: test
-#       ignore_errors: True
-#
-#     - debug: var=test
-#     - name: Check TEST 104
-#       assert:
-#         that:
-#           - test|failed
-#           #- "test.msg.find('argument session is of type') != -1"
 #-------------------------------------------------------
+
+    # - name: "TEST 104 - Session is not valid"
+    #   aos_ip_pool:
+    #     session: "{{ session_wrong_token }}"
+    #     name: "my-ip-pool"
+    #     subnets: [ 172.10.0.0/16 ]
+    #     state: present
+    #   register: test
+    #   ignore_errors: True
+    #
+    # - debug: var=test
+    # - name: Check TEST 104
+    #   assert:
+    #     that:
+    #       - test|failed
+    #       - "test.msg.find('argument session is of type') != -1"
 
 #-------------------------------------------------------
 # TESTS 200 - Valid Inputs
@@ -254,41 +273,171 @@
         that:
           - test|success
           - not test|changed
+#-------------------------------------------------------
+    - name: "INIT 210 - Create IP Pool"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        name: "my-ip-pool"
+        subnets: [ 172.10.0.0/16, 172.12.0.0/16 ]
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
 
-    # - debug: var=test1
-    #
-    # - name: "TEST 2 - Delete IP Pool (again)"
-    #   aos_ip_pool:
-    #     session: "{{ session }}"
-    #     name: "my-ip-pool"
-    #     state: absent
-    #   register: test2
-    #   ignore_errors: True
-    #
-    # - debug: var=test2
-    #
-    # - name: "TEST 3 - Create IP Pool"
-    #   aos_ip_pool:
-    #     session: "{{ session }}"
-    #     name: "my-ip-pool"
-    #     subnets: [ 172.10.0.0/16 ]
-    #     state: present
-    #   register: test3
-    #   ignore_errors: True
-    #
-    # - debug: var=test3
-    # # - name: Check TEST 1
-    # #   assert:
-    # #     that:
-    # #       - test1.packet_loss == '0'
-    #
-    # - name: "TEST 4 - Create IP Pool Again"
-    #   aos_ip_pool:
-    #     session: "{{ session }}"
-    #     name: "my-ip-pool"
-    #     subnets: [ 172.10.0.0/16 ]
-    #     state: present
-    #   register: test4
-    #   ignore_errors: True
-    #
-    # - debug: var=test4
+    - name: Check TEST 210
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 210 - Save Ip Pool into a file "
+      copy:
+        content: "{{ test.value | to_nice_json }}"
+        dest: resources/ip_pool_saved.json
+
+    - name: Check TEST 210
+      assert:
+        that:
+          - test|success
+          # - not test|changed
+
+#-------------------------------------------------------
+    - name: "INIT 211 - Delete IP Pool"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        name: "my-ip-pool"
+        state: absent
+      register: test
+      ignore_errors: True
+
+    - name: Check Init TEST 211
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 211 - Load Ip Pool from file, Check Mode 1/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        src: resources/ip_pool_saved.json
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 211
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 212 - Load Ip Pool from file, Check Mode 2/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        src: resources/ip_pool_saved.json
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 212
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 213 - Load Ip Pool from file, 1/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        src: resources/ip_pool_saved.json
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 213
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 214 - Load Ip Pool from file, 2/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        src: resources/ip_pool_saved.json
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 214
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 215 - Delete IP Pool from File, Check Mode 1/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        src: resources/ip_pool_saved.json
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 215
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 216 - Delete IP Pool from File, Check Mode 2/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        src: resources/ip_pool_saved.json
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check Init TEST 216
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 217 - Delete IP Pool from File, 1/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        src: resources/ip_pool_saved.json
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check Init TEST 217
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 218 - Delete IP Pool from File, 2/2"
+      aos_ip_pool:
+        session: "{{ session_ok }}"
+        src: resources/ip_pool_saved.json
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check Init TEST 218
+      assert:
+        that:
+          - test|success
+          - not test|changed

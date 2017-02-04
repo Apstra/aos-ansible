@@ -1,0 +1,8 @@
+{
+   "display_name": "Servers-IpAddrs",
+   "subnets": [
+      {
+         "network": "172.21.0.0/16"
+      }
+   ]
+}

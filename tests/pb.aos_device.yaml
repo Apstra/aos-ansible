@@ -1,0 +1,174 @@
+
+---
+- name: Test aos_device module
+  hosts: aos-server
+  connection: local
+  gather_facts: no
+  vars:
+    session_wrong_token:
+      headers:
+        AUTHTOKEN: XXX
+      url: http://172.20.52.3:8888/api
+    # session_ok:
+    #   headers:
+    #     AUTHTOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY3JlYXRlZF9hdCI6IjIwMTctMDItMDNUMTc6MDc6MTMuMDk3NzEwWiIsInNlc3Npb24iOiIxYzU3N2JkNC0yN2U0LTQ2MTgtOWQ1Yy01MDI5MDk0ZTQ5MGUifQ.qe_4OhHOl_ez4uUl5Ba78Tkqu9MyGJO3b9rudRICR7s
+    #   url: http://172.20.52.3:8888/api
+    device_id: 5254001CAFD8
+  tasks:
+#-------------------------------------------------------
+# TESTS 000 - Open Session
+#-------------------------------------------------------
+    - name: Open Session on AOS Server
+      uri:
+        url: "http://{{address}}:{{port}}/api/user/login"
+        method: POST
+        status_code: 201
+        HEADER_Content-Type: 'application/json'
+        HEADER_Accept: 'application/json'
+        body: >
+          {
+            "username": "{{username}}",
+            "password": "{{password}}"
+          }
+        body_format: json
+      register: session
+
+    - name: Format token into session_ok variable
+      set_fact:
+        session_ok:
+          url: http://{{address}}:{{port}}/api
+          headers:
+            AUTHTOKEN: "{{session.json.token}}"
+
+#-------------------------------------------------------
+# TESTS 100 - Wrong Inputs
+#-------------------------------------------------------
+    - name: "TEST 101 - Session is mandatory"
+      aos_device:
+        name: "5254001CAFD8"
+        state: normal
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+    - name: Check TEST 101
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('missing required arguments') != -1"
+#-------------------------------------------------------
+    - name: "TEST 102 - Name and ID are mutually exclusive"
+      aos_device:
+        session: "{{ session_ok }}"
+        name: "myName"
+        id: "myID"
+        state: normal
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test102
+    - name: Check TEST 102
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('parameters are mutually exclusive') != -1"
+#-------------------------------------------------------
+    - name: "TEST 103 - Session is a dict"
+      aos_device:
+        session: "my-session"
+        name: "my device"
+        state: normal
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+    - name: Check TEST 103
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('argument session is of type') != -1"
+
+#-------------------------------------------------------
+# TESTS 200 - Valid Inputs
+#-------------------------------------------------------
+    #
+    # - name: "SETUP 200 - Cleanup existing server"
+    #   aos_device:
+    #     session: "{{ session_ok }}"
+    #     name: "my-ip-pool"
+    #     state: absent
+    #   register: test
+    #   ignore_errors: True
+    #
+    # # - debug: var=test
+    #
+    # - name: Check TEST 200
+    #   assert:
+    #     that:
+    #       - test|success
+
+#-------------------------------------------------------
+    - name: "TEST 201 - Approve a device 1/2, check mode"
+      aos_device:
+        session: "{{ session_ok }}"
+        name: "{{device_id}}"
+        state: normal
+        approve: yes
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 201
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 202 - Approve a device 2/2, check mode"
+      aos_device:
+        session: "{{ session_ok }}"
+        name: "{{device_id}}"
+        state: normal
+        approve: yes
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 202
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 203 - Approve a device 1/2"
+      aos_device:
+        session: "{{ session_ok }}"
+        name: "{{device_id}}"
+        state: normal
+        approve: yes
+      register: test
+      ignore_errors: True
+
+    - name: Check TEST 203
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 204 - Approve a device 2/2"
+      aos_device:
+        session: "{{ session_ok }}"
+        name: "{{device_id}}"
+        state: normal
+        approve: yes
+      register: test
+      ignore_errors: True
+
+    - name: Check TEST 204
+      assert:
+        that:
+          - test|success
+          - not test|changed

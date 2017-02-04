@@ -48,8 +48,7 @@ from ansible.module_utils.basic import AnsibleModule
 try:
     from apstra.aosom.session import Session
     from apstra.aosom.exc import LoginError, SessionError
-    from apstra.aosom.valuexf import CollectionValueTransformer
-    from apstra.aosom.valuexf import CollectionValueMultiTransformer
+    from apstra.aosom.collection_mapper import CollectionMapper, MultiCollectionMapper
     HAS_AOS_PYEZ = True
 except ImportError:
     HAS_AOS_PYEZ = False
@@ -104,18 +103,18 @@ def main():
 
         if param_map:
             if isinstance(param_map, dict):
-                xf = CollectionValueMultiTransformer(aos, param_map)
+                xf = MultiCollectionMapper(aos, param_map)
             else:
-                xf = CollectionValueTransformer(getattr(aos, param_map))
-            param_value = xf.xf_out(param_value)
+                xf = CollectionMapper(getattr(aos, param_map))
+            param_value = xf.from_label(param_value)
 
         if param.value != param_value:
             param.value = param_value
             changed = True
 
     except SessionError as exc:
-        module.fail_json(msg='unable to write to param %s: %s' %
-                             (margs['param_name'], str(exc)))
+        module.fail_json(msg='unable to write to param {}: data={}\nexc={}'.format(
+            margs['param_name'], json.dumps(param.value, indent=2), str(exc)))
 
     module.exit_json(changed=changed)
 

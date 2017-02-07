@@ -1,0 +1,67 @@
+
+---
+- name: Test aos_login module
+  hosts: aos-server
+  connection: local
+  gather_facts: no
+  # vars:
+    # session_wrong_token:
+    #   headers:
+    #     AUTHTOKEN: XXX
+    #   url: http://{{address}}:{{port}}/api
+  tasks:
+
+#-------------------------------------------------------
+# TESTS 100 - Wrong Inputs
+#-------------------------------------------------------
+    - name: "TEST 101 - server is mandatory"
+      aos_login:
+        port: 888
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+    - name: Check TEST 101
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('missing required arguments') != -1"
+
+#-------------------------------------------------------
+# TESTS 200 - Valid Inputs
+#-------------------------------------------------------
+
+    - name: "TEST 200 - Open Session"
+      aos_login:
+        server: "{{ address }}"
+        port: "{{ port }}"
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 200
+      assert:
+        that:
+          - test|success
+          - not test|changed
+          - aos_session
+          - test.aos_session
+
+#-------------------------------------------------------
+# TESTS 201 - Wrong Cred
+#-------------------------------------------------------
+
+    - name: "TEST 201 - Open Session with wrong cred"
+      aos_login:
+        server: "{{ address }}"
+        port: "{{ port }}"
+        user: notvalid
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 201
+      assert:
+        that:
+          - test|failed
+          - not test|changed

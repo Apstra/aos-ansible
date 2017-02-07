@@ -4,11 +4,12 @@
   hosts: aos-server
   connection: local
   gather_facts: no
-  # vars:
-    # session_wrong_token:
-    #   headers:
-    #     AUTHTOKEN: XXX
-    #   url: http://{{address}}:{{port}}/api
+  vars:
+    session_wrong_token:
+      server: "{{address}}"
+      port: "{{port}}"
+      token: "WRONGTOKEN"
+
   tasks:
 
 #-------------------------------------------------------

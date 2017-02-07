@@ -6,14 +6,10 @@
   gather_facts: no
   vars:
     session_wrong_token:
-      headers:
-        AUTHTOKEN: XXX
-      url: http://172.20.52.3:8888/api
-    # session_ok:
-    #   headers:
-    #     AUTHTOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY3JlYXRlZF9hdCI6IjIwMTctMDItMDNUMTc6MDc6MTMuMDk3NzEwWiIsInNlc3Npb24iOiIxYzU3N2JkNC0yN2U0LTQ2MTgtOWQ1Yy01MDI5MDk0ZTQ5MGUifQ.qe_4OhHOl_ez4uUl5Ba78Tkqu9MyGJO3b9rudRICR7s
-    #   url: http://172.20.52.3:8888/api
-    device_id: 5254001CAFD8
+      server: "{{address}}"
+      port: "{{port}}"
+      token: "WRONGTOKEN"
+    device_id: 525400E5486D
   tasks:
 #-------------------------------------------------------
 # TESTS 000 - Open Session
@@ -36,9 +32,9 @@
     - name: Format token into session_ok variable
       set_fact:
         session_ok:
-          url: http://{{address}}:{{port}}/api
-          headers:
-            AUTHTOKEN: "{{session.json.token}}"
+          server: "{{address}}"
+          port: "{{port}}"
+          token: "{{session.json.token}}"
 
 #-------------------------------------------------------
 # TESTS 100 - Wrong Inputs

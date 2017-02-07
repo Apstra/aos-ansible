@@ -6,9 +6,10 @@
   gather_facts: no
   vars:
     session_wrong_token:
-      headers:
-        AUTHTOKEN: XXX
-      url: http://{{address}}:{{port}}/api
+      server: "{{address}}"
+      port: "{{port}}"
+      token: "WRONGTOKEN"
+
   tasks:
 #-------------------------------------------------------
 # TESTS 000 - Open Session
@@ -31,9 +32,9 @@
     - name: Format token into session_ok variable
       set_fact:
         session_ok:
-          url: http://{{address}}:{{port}}/api
-          headers:
-            AUTHTOKEN: "{{session.json.token}}"
+          server: "{{address}}"
+          port: "{{port}}"
+          token: "{{session.json.token}}"
 
 #-------------------------------------------------------
 # TESTS 100 - Wrong Inputs

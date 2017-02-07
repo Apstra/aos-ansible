@@ -87,21 +87,21 @@
           - "test.msg.find('argument session is of type') != -1"
 #-------------------------------------------------------
 
-    # - name: "TEST 104 - Session is not valid"
-    #   aos_ip_pool:
-    #     session: "{{ session_wrong_token }}"
-    #     name: "my-ip-pool"
-    #     subnets: [ 172.10.0.0/16 ]
-    #     state: present
-    #   register: test
-    #   ignore_errors: True
-    #
-    # - debug: var=test
-    # - name: Check TEST 104
-    #   assert:
-    #     that:
-    #       - test|failed
-    #       - "test.msg.find('argument session is of type') != -1"
+    - name: "TEST 104 - Session is not valid"
+      aos_ip_pool:
+        session: "{{ session_wrong_token }}"
+        name: "my-ip-pool"
+        subnets: [ 172.10.0.0/16 ]
+        state: present
+      register: test
+      ignore_errors: True
+
+    - debug: var=test
+    - name: Check TEST 104
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('Unable to login to the AOS server') != -1"
 
 #-------------------------------------------------------
 # TESTS 200 - Valid Inputs

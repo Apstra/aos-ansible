@@ -1,0 +1,130 @@
+{
+   "display_name": "my-template",
+   "id": "template-id",
+   "fabric_connectivity_intent": {
+      "design": {
+         "utilize_all_server_ports": true,
+         "type": "endpoint_based_design",
+         "server_count": 15,
+         "minimize_oversubscription": false,
+         "desired_oversubscription": 1.0,
+         "server_link_speed": {
+            "value": 10,
+            "unit": "G"
+         }
+      },
+      "design_template": {
+         "derived_metrics": {
+            "spine_fabric_port_util": 0.4285714328289032,
+            "leaf_fabric_port_util": 0.2857142984867096,
+            "oversubscription": 2.5,
+            "leaf_server_port_util": 0.7142857313156128,
+            "leaf_uplink_count": 2
+         },
+         "leaf_spine_links_count": 1,
+         "spine_count": 2,
+         "leaf_count": 3,
+         "logical_devices_intent": {
+            "spine": {
+               "panels": [
+                  {
+                     "port_groups": [
+                        {
+                           "count": 7,
+                           "speed": {
+                              "value": 10,
+                              "unit": "G"
+                           },
+                           "roles": [
+                              "leaf",
+                              "external_router"
+                           ]
+                        }
+                     ],
+                     "port_indexing": {
+                        "order": "T-B, L-R",
+                        "start_index": 1,
+                        "schema": "absolute"
+                     },
+                     "panel_layout": {
+                        "row_count": 1,
+                        "column_count": 7
+                     }
+                  }
+               ],
+               "display_name": "Spine-Switch-Virtual",
+               "id": "Spine-Switch-Virtual"
+            },
+            "leaf": {
+               "panels": [
+                  {
+                     "port_groups": [
+                        {
+                           "count": 7,
+                           "speed": {
+                              "value": 10,
+                              "unit": "G"
+                           },
+                           "roles": [
+                              "server",
+                              "peer",
+                              "l2_server",
+                              "l3_server",
+                              "spine",
+                              "external_router"
+                           ]
+                        }
+                     ],
+                     "port_indexing": {
+                        "order": "T-B, L-R",
+                        "start_index": 1,
+                        "schema": "absolute"
+                     },
+                     "panel_layout": {
+                        "row_count": 1,
+                        "column_count": 7
+                     }
+                  }
+               ],
+               "display_name": "Leaf-Switch-Virtual",
+               "id": "Leaf-Switch-Virtual"
+            }
+         },
+         "server_per_leaf_count": 5
+      }
+   },
+   "l3_edge_ip_connectivity_intent": {
+      "active": false
+   },
+   "dhcp_service_intent": {
+      "active": true
+   },
+   "l2_edge_ip_connectivity_intent": {
+      "active": true
+   },
+   "type": "server_based",
+   "external_connectivity_intent": {
+      "routing_policy": {
+         "export_policy": {
+            "all_routes": true,
+            "spine_leaf_links": true,
+            "loopbacks": true,
+            "l2edge_subnets": true,
+            "l3edge_server_links": true
+         },
+         "import_policy": "default_only"
+      },
+      "l3edge_to_server_bandwidth_ratio": 1.0,
+      "device_hosting_external_links": "spine",
+      "port_speed": {
+         "value": 10,
+         "unit": "G"
+      },
+      "design_template": {
+         "external_port_per_node_count": 1,
+         "total_external_port_count": 2,
+         "external_facing_node_count": 2
+      },
+      "external_links_count": 2
+   }
+}

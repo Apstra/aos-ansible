@@ -70,12 +70,11 @@ def main():
                              'here: https://github.com/Apstra/aos-pyez')
 
     margs = module.params
-    auth = margs['session']
     aos, blueprint, param = [None] * 3
 
     try:
         aos = Session()
-        aos.api.resume(url=auth['url'], headers=auth['headers'])
+        aos.session = margs['session']
     except LoginError as exc:
         module.fail_json(msg='unable to login to AOS API: %s' % str(exc))
 

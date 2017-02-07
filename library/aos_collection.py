@@ -154,11 +154,10 @@ def main():
                              'here: https://github.com/Apstra/aos-pyez')
 
     margs = module.params
-    auth = margs['session']
     resources = None
 
     aos = Session()
-    aos.api.resume(auth['url'], auth['headers'])
+    aos.session = margs['session']
 
     try:
         resources = getattr(aos, margs['collection'])

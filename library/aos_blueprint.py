@@ -168,7 +168,7 @@ def main():
 
     try:
         aos = Session()
-        aos.api.resume(url=auth['url'], headers=auth['headers'])
+        aos.session = margs['session']
     except LoginError as exc:
         module.fail_json(msg='Unable to login to AOS API: %s' % str(exc))
 

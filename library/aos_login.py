@@ -101,8 +101,7 @@ def main():
 
     module.exit_json(
         changed=False,
-        ansible_facts=dict(
-            aos_session=dict(url=aos.api.url, headers=aos.api.headers)))
+        ansible_facts=dict(aos_session=aos.session))
 
 if __name__ == '__main__':
     main()

@@ -63,11 +63,10 @@ def main():
                              'here: https://github.com/Apstra/aos-pyez')
 
     margs = module.params
-    auth = margs['session']
 
     try:
         aos = Session()
-        aos.api.resume(auth['url'], auth['headers'])
+        aos.session = margs['session']
     except LoginError:
         module.fail_json(msg="unable to login")
 

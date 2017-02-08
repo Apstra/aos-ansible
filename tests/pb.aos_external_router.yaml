@@ -1,0 +1,756 @@
+
+---
+- name: Test aos_external_router module
+  hosts: aos-server
+  connection: local
+  gather_facts: no
+  vars:
+    session_wrong_token:
+      server: "{{address}}"
+      port: "{{port}}"
+      token: "WRONGTOKEN"
+  tasks:
+#-------------------------------------------------------
+# TESTS 000 - Open Session
+#-------------------------------------------------------
+    - name: Open Session on AOS Server
+      uri:
+        url: "http://{{address}}:{{port}}/api/user/login"
+        method: POST
+        status_code: 201
+        HEADER_Content-Type: 'application/json'
+        HEADER_Accept: 'application/json'
+        body: >
+          {
+            "username": "{{username}}",
+            "password": "{{password}}"
+          }
+        body_format: json
+      register: session
+
+    - name: Format token into session_ok variable
+      set_fact:
+        session_ok:
+          server: "{{address}}"
+          port: "{{port}}"
+          token: "{{session.json.token}}"
+
+#-------------------------------------------------------
+# TESTS 100 - Wrong Inputs
+#-------------------------------------------------------
+    - name: "TEST 101 - Session is mandatory"
+      aos_external_router:
+        name: "my-external-router"
+        state: present
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+    - name: Check TEST 101
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('missing required arguments') != -1"
+#-------------------------------------------------------
+    - name: "TEST 102 - Name and ID are mutually exclusive"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        name: "myName"
+        id: "myID"
+        state: present
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test102
+    - name: Check TEST 102
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('parameters are mutually exclusive') != -1"
+#-------------------------------------------------------
+    - name: "TEST 103 - Session is a dict"
+      aos_external_router:
+        session: "my-session"
+        name: "my-external-router"
+        state: present
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+    - name: Check TEST 103
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('argument session is of type') != -1"
+#-------------------------------------------------------
+
+    - name: "TEST 104 - Session is not valid"
+      aos_external_router:
+        session: "{{ session_wrong_token }}"
+        name: "my-external-router"
+        state: present
+      register: test
+      ignore_errors: True
+
+    - debug: var=test
+    - name: Check TEST 104
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('Unable to login to the AOS server') != -1"
+
+#-------------------------------------------------------
+# TESTS 200 - Valid Inputs
+#-------------------------------------------------------
+    - name: "SETUP 200 - Cleanup existing server"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        name: "my-external-router"
+        state: absent
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+
+    - name: Check TEST 200
+      assert:
+        that:
+          - test|success
+
+#-------------------------------------------------------
+    - name: "TEST 201 - Create External Router - Check mode 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        name: "my-external-router"
+        loopback: 10.0.0.1
+        asn: 6666
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 201
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 202 - Create External Router - Check mode 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        name: "my-external-router"
+        loopback: 10.0.0.1
+        asn: 6666
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 202
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 203 - Create External Router - 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        name: "my-external-router"
+        loopback: 10.0.0.1
+        asn: 6666
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 203
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 204 - Create External Router - 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        name: "my-external-router"
+        loopback: 10.0.0.1
+        asn: 6666
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 204
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 205 - Create External Router - Check mode when exist"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        name: "my-external-router"
+        loopback: 10.0.0.1
+        asn: 6666
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 205
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 206 - Delete External Router - Check mode when exist"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        name: "my-external-router"
+        loopback: 10.0.0.1
+        asn: 6666
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 206
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 207 - Delete External Router - 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        name: "my-external-router"
+        loopback: 10.0.0.1
+        asn: 6666
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 207
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 208 - Delete External Router - 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        name: "my-external-router"
+        loopback: 10.0.0.1
+        asn: 6666
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 208
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 209 - Delete External Router - Check mode when absent"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        name: "my-external-router"
+        loopback: 10.0.0.1
+        asn: 6666
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 209
+      assert:
+        that:
+          - test|success
+          - not test|changed
+#-------------------------------------------------------
+    - name: "INIT 210 - Create External Router"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        name: "my-external-router"
+        loopback: 10.0.0.1
+        asn: 6666
+        state: present
+      register: ippool
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 210
+      assert:
+        that:
+          - ippool|success
+          - ippool|changed
+
+#-------------------------------------------------------
+    - name: "TEST 210.1 - Save External Router into a file in JSON"
+      copy:
+        content: "{{ ippool.value | to_nice_json }}"
+        dest: resources/external_router_saved.json
+      register: test
+      ignore_errors: True
+
+    - name: Check TEST 210.1
+      assert:
+        that:
+          - test|success
+#-------------------------------------------------------
+    - name: "TEST 210.2 - Save External Router into a file in YAML"
+      copy:
+        content: "{{ ippool.value | to_nice_yaml }}"
+        dest: resources/external_router_saved.yaml
+      register: test
+      ignore_errors: True
+
+    - name: Check TEST 210.2
+      assert:
+        that:
+          - test|success
+#-------------------------------------------------------
+    - name: "INIT 211 - Delete External Router"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        name: "my-external-router"
+        state: absent
+      register: test
+      ignore_errors: True
+
+    - name: Check Init TEST 211
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 211 - Load External Router from file (JSON), Check Mode 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.json') }}"
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 211
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 212 - Load External Router from file (Json), Check Mode 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.json') }}"
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 212
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 213 - Load External Router from file(JSON), 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.json') }}"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 213
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 214 - Load External Router from File(JSON), 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.json') }}"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 214
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 215 - Delete External Router from File(JSON), Check Mode 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.json') }}"
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 215
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 216 - Delete External Router from File(JSON), Check Mode 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.json') }}"
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check Init TEST 216
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 217 - Delete External Router from File(JSON), 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.json') }}"
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check Init TEST 217
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 218 - Delete External Router from File(JSON), 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.json') }}"
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check Init TEST 218
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 219 - Load External Router from File with wrong format JSON instead of Yaml"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
+        content_format: json
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check Init TEST 219
+      assert:
+        that:
+          - test|failed
+
+#-------------------------------------------------------
+    - name: "TEST 221 - Load External Router from file (Yaml), Check Mode 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
+        content_format: yaml
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 221
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 222 - Load External Router from file (Yaml), Check Mode 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
+        content_format: yaml
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 222
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 223 - Load External Router from file(Yaml), 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
+        content_format: yaml
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 223
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 224 - Load External Router from File(Yaml), 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
+        content_format: yaml
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 224
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 225 - Delete External Router from File(Yaml), Check Mode 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
+        content_format: yaml
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 225
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 226 - Delete External Router from File(Yaml), Check Mode 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
+        content_format: yaml
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check Init TEST 226
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 227 - Delete External Router from File(Yaml), 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
+        content_format: yaml
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check Init TEST 227
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 228 - Delete External Router from File(Yaml), 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
+        content_format: yaml
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check Init TEST 228
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: TEST 230 Create Variable with Content
+      set_fact:
+        content_var_ok:
+          display_name: my-external-router
+          id: 4276738d-6f86-4034-9656-4bff94a34ea7
+          address: 10.0.0.1
+          asn: 6666
+
+#-------------------------------------------------------
+    - name: "TEST 231 - Load External Router from Variable, Check Mode 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content:
+          display_name: my-external-router
+          id: 4276738d-6f86-4034-9656-4bff94a34ea7
+          address: 10.0.0.1
+          asn: 6666
+        content_format: var
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 231
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 232 - Load External Router from Variable, Check Mode 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ content_var_ok }}"
+        content_format: var
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 232
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 233 - Load External Router from Variable, 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ content_var_ok }}"
+        content_format: var
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 233
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 234 - Load External Router from Variable, 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ content_var_ok }}"
+        content_format: var
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 234
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 235 - Delete External Router from Variable, Check Mode 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ content_var_ok }}"
+        content_format: var
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 235
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 236 - Delete External Router from Variable, Check Mode 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ content_var_ok }}"
+        content_format: var
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check Init TEST 236
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 237 - Delete External Router from Variable, 1/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ content_var_ok }}"
+        content_format: var
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check Init TEST 237
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 238 - Delete External Router from Variable, 2/2"
+      aos_external_router:
+        session: "{{ session_ok }}"
+        content: "{{ content_var_ok }}"
+        content_format: var
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check Init TEST 238
+      assert:
+        that:
+          - test|success
+          - not test|changed

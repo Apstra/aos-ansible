@@ -6,15 +6,38 @@
   gather_facts: no
   vars:
     session_wrong_token:
-      headers:
-        AUTHTOKEN: XXX
-      url: http://172.20.52.3:8888/api
-    session_ok:
-      headers:
-        AUTHTOKEN: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFkbWluIiwiY3JlYXRlZF9hdCI6IjIwMTctMDItMDFUMDA6NDY6NTUuMjI1NjIzWiIsInNlc3Npb24iOiI1M2U2MDRjMi0wNTg4LTRmOGItYmJkZC1hYmQ4ODRiZDhkMDgifQ.K7I3Fag0FfhxPCoYJVoKgo4As6ySHygxxKgImJxfp1k
-      url: http://172.20.52.3:8888/api
+      server: "{{address}}"
+      port: "{{port}}"
+      token: "WRONGTOKEN"
 
   tasks:
+#-------------------------------------------------------
+# TESTS 000 - Open Session
+#-------------------------------------------------------
+    - name: Open Session on AOS Server
+      uri:
+        url: "http://{{address}}:{{port}}/api/user/login"
+        method: POST
+        status_code: 201
+        HEADER_Content-Type: 'application/json'
+        HEADER_Accept: 'application/json'
+        body: >
+          {
+            "username": "{{username}}",
+            "password": "{{password}}"
+          }
+        body_format: json
+      register: session
+      tags: [ yaml, json, var, input, negative, param ]
+
+    - name: Format token into session_ok variable
+      set_fact:
+        session_ok:
+          server: "{{address}}"
+          port: "{{port}}"
+          token: "{{session.json.token}}"
+      tags: [ yaml, json, var, input, negative, param ]
+
 #-------------------------------------------------------
 # TESTS 100 - Wrong Inputs
 #-------------------------------------------------------
@@ -24,13 +47,14 @@
         state: present
       register: test
       ignore_errors: True
+      tags: [ negative, param ]
 
-    # - debug: var=test
     - name: Check TEST 101
       assert:
         that:
           - test|failed
           - "test.msg.find('missing required arguments') != -1"
+      tags: [ negative, param ]
 #-------------------------------------------------------
     - name: "TEST 102 - Name and ID are mutually exclusive"
       aos_asn_pool:
@@ -40,13 +64,14 @@
         state: present
       register: test
       ignore_errors: True
+      tags: [ negative, param ]
 
-    # - debug: var=test102
     - name: Check TEST 102
       assert:
         that:
           - test|failed
           - "test.msg.find('parameters are mutually exclusive') != -1"
+      tags: [ negative, param ]
 #-------------------------------------------------------
     - name: "TEST 103 - Session is a dict"
       aos_asn_pool:
@@ -55,6 +80,7 @@
         state: present
       register: test
       ignore_errors: True
+      tags: [ negative, param ]
 
     # - debug: var=test
     - name: Check TEST 103
@@ -62,6 +88,7 @@
         that:
           - test|failed
           - "test.msg.find('argument session is of type') != -1"
+        tags: [ negative, param ]
 #-------------------------------------------------------
     - name: "SETUP 104 - Check range is a list"
       aos_asn_pool:
@@ -72,14 +99,15 @@
           - not a list
       register: test
       ignore_errors: True
-
-    # - debug: var=test
+      tags: [ negative, param ]
 
     - name: Check TEST 104
       assert:
         that:
           - test|failed
-          - "test.msg.find('must be a list not') != -1"
+          - "test.msg.find('must be a list') != -1"
+      tags: [ negative, param ]
+
 #-------------------------------------------------------
     - name: "SETUP 105 - Check range have only 2 value"
       aos_asn_pool:
@@ -89,15 +117,14 @@
           - [10, 20, 30 ]
       register: test
       ignore_errors: True
-
-    # - debug: var=test
+      tags: [ negative, param ]
 
     - name: Check TEST 105
       assert:
         that:
           - test|failed
           - "test.msg.find('must be a list of 2') != -1"
-
+      tags: [ negative, param ]
 #-------------------------------------------------------
     - name: "SETUP 106 - Check range is composed of 2 Integer 1/2"
       aos_asn_pool:
@@ -107,15 +134,14 @@
           - [10, test ]
       register: test
       ignore_errors: True
-
-    # - debug: var=test
+      tags: [ negative, param ]
 
     - name: Check TEST 106
       assert:
         that:
           - test|failed
           - "test.msg.find('2nd element of range (1) must be integer') != -1"
-
+      tags: [ negative, param ]
 #-------------------------------------------------------
     - name: "SETUP 107 - Check range is composed of 2 Integer 2/2"
       aos_asn_pool:
@@ -126,14 +152,14 @@
           - [not_int, 20 ]
       register: test
       ignore_errors: True
-
-    # - debug: var=test
+      tags: [ negative, param ]
 
     - name: Check TEST 107
       assert:
         that:
           - test|failed
           - "test.msg.find('1st element of range (2) must be integer') != -1"
+      tags: [ negative, param ]
 #-------------------------------------------------------
     - name: "SETUP 108 - Range, 2nd must be bigger than 1st"
       aos_asn_pool:
@@ -144,15 +170,14 @@
           - [ 30, 20 ]
       register: test
       ignore_errors: True
-
-    # - debug: var=test
+      tags: [ negative, param ]
 
     - name: Check TEST 108
       assert:
         that:
           - test|failed
           - "test.msg.find('must be bigger than 1st') != -1"
-
+      tags: [ negative, param ]
 #-------------------------------------------------------
 
 #-------------------------------------------------------
@@ -166,13 +191,13 @@
         state: absent
       register: test
       ignore_errors: True
-
-    # - debug: var=test
+      tags: [ input ]
 
     - name: Check TEST 200
       assert:
         that:
           - test|success
+      tags: [ input ]
 
 #-------------------------------------------------------
     - name: "TEST 201 - Create ASN Pool - Check mode 1/2"
@@ -185,12 +210,14 @@
       register: test
       check_mode: yes
       ignore_errors: True
+      tags: [ input ]
 
     - name: Check TEST 201
       assert:
         that:
           - test|success
           - test|changed
+      tags: [ input ]
 #-------------------------------------------------------
     - name: "TEST 202 - Create ASN Pool - Check mode 2/2"
       aos_asn_pool:
@@ -202,13 +229,14 @@
       register: test
       check_mode: yes
       ignore_errors: True
+      tags: [ input ]
 
     - name: Check TEST 202
       assert:
         that:
           - test|success
           - test|changed
-
+      tags: [ input ]
 #-------------------------------------------------------
     - name: "TEST 203 - Create ASN Pool - 1/2"
       aos_asn_pool:
@@ -220,12 +248,14 @@
       register: test
       check_mode: no
       ignore_errors: True
+      tags: [ input ]
 
     - name: Check TEST 203
       assert:
         that:
           - test|success
           - test|changed
+      tags: [ input ]
 
 #-------------------------------------------------------
     - name: "TEST 204 - Create ASN Pool - 2/2"
@@ -238,13 +268,14 @@
       register: test
       check_mode: no
       ignore_errors: True
+      tags: [ input ]
 
     - name: Check TEST 204
       assert:
         that:
           - test|success
           - not test|changed
-
+      tags: [ input ]
 #-------------------------------------------------------
     - name: "TEST 205 - Create ASN Pool - Check mode when exist"
       aos_asn_pool:
@@ -256,13 +287,14 @@
       register: test
       check_mode: yes
       ignore_errors: True
+      tags: [ input ]
 
     - name: Check TEST 205
       assert:
         that:
           - test|success
           - not test|changed
-
+      tags: [ input ]
 #-------------------------------------------------------
     - name: "TEST 206 - Delete ASN Pool - Check mode when exist"
       aos_asn_pool:
@@ -272,12 +304,14 @@
       register: test
       check_mode: yes
       ignore_errors: True
+      tags: [ input ]
 
     - name: Check TEST 206
       assert:
         that:
           - test|success
           - test|changed
+      tags: [ input ]
 
 #-------------------------------------------------------
     - name: "TEST 207 - Delete ASN Pool - 1/2"
@@ -288,13 +322,14 @@
       register: test
       check_mode: no
       ignore_errors: True
+      tags: [ input ]
 
     - name: Check TEST 207
       assert:
         that:
           - test|success
           - test|changed
-
+      tags: [ input ]
 #-------------------------------------------------------
     - name: "TEST 208 - Delete ASN Pool - 2/2"
       aos_asn_pool:
@@ -304,13 +339,13 @@
       register: test
       check_mode: no
       ignore_errors: True
-
+      tags: [ input ]
     - name: Check TEST 208
       assert:
         that:
           - test|success
           - not test|changed
-
+      tags: [ input ]
 #-------------------------------------------------------
     - name: "TEST 209 - Delete ASN Pool - Check mode when absent"
       aos_asn_pool:
@@ -320,9 +355,366 @@
       register: test
       check_mode: yes
       ignore_errors: True
+      tags: [ input ]
 
     - name: Check TEST 209
       assert:
         that:
           - test|success
           - not test|changed
+      tags: [ input ]
+
+#-------------------------------------------------------
+    - name: "INIT 210 - Create ASN Pool"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        ranges:
+          - [ 100, 200 ]
+        state: present
+      register: asnpool
+      check_mode: no
+      ignore_errors: True
+      tags: [ json, yaml ]
+
+    - name: Check TEST 210
+      assert:
+        that:
+          - asnpool|success
+          # - asnpool|changed
+      tags: [ json, yaml ]
+
+#-------------------------------------------------------
+    - name: "TEST 210.1 - Save ASN Pool into a file in JSON"
+      copy:
+        content: "{{ asnpool.value | to_nice_json }}"
+        dest: resources/asn_pool_saved.json
+      register: test
+      ignore_errors: True
+      tags: [ json ]
+
+    - name: Check TEST 210.1
+      assert:
+        that:
+          - test|success
+      tags: [ json ]
+#-------------------------------------------------------
+    - name: "TEST 210.2 - Save ASN Pool into a file in YAML"
+      copy:
+        content: "{{ asnpool.value | to_nice_yaml }}"
+        dest: resources/asn_pool_saved.yaml
+      register: test
+      ignore_errors: True
+      tags: [ yaml ]
+
+    - name: Check TEST 210.2
+      assert:
+        that:
+          - test|success
+      tags: [ yaml ]
+#-------------------------------------------------------
+    - name: "INIT 211 - Delete ASN Pool"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        name: "my-asn-pool"
+        state: absent
+      register: test
+      ignore_errors: True
+      tags: [ json, yaml ]
+
+    - name: Check Init TEST 211
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ json, yaml]
+#-------------------------------------------------------
+    - name: "TEST 211 - Load ASN Pool from file (JSON), Check Mode 1/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.json') }}"
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ json ]
+
+    - name: Check TEST 211
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ json ]
+#-------------------------------------------------------
+    - name: "TEST 212 - Load ASN Pool from file (JSON), Check Mode 2/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.json') }}"
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ json ]
+
+    - name: Check TEST 212
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ json ]
+
+#-------------------------------------------------------
+    - name: "TEST 213 - Load ASN Pool from file(JSON), 1/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.json') }}"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ json ]
+
+    - name: Check TEST 213
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ json ]
+
+#-------------------------------------------------------
+    - name: "TEST 214 - Load ASN Pool from File(JSON), 2/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.json') }}"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ json ]
+
+    - name: Check TEST 214
+      assert:
+        that:
+          - test|success
+          - not test|changed
+      tags: [ json ]
+
+#-------------------------------------------------------
+    - name: "TEST 215 - Delete ASN Pool from File(JSON), Check Mode 1/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.json') }}"
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ json ]
+
+    - name: Check TEST 215
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ json ]
+#-------------------------------------------------------
+    - name: "TEST 216 - Delete ASN Pool from File(JSON), Check Mode 2/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.json') }}"
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ json ]
+
+    - name: Check Init TEST 216
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ json ]
+
+#-------------------------------------------------------
+    - name: "TEST 217 - Delete ASN Pool from File(JSON), 1/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.json') }}"
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ json ]
+
+    - name: Check Init TEST 217
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ json ]
+
+#-------------------------------------------------------
+    - name: "TEST 218 - Delete ASN Pool from File(JSON), 2/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.json') }}"
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ json ]
+
+    - name: Check Init TEST 218
+      assert:
+        that:
+          - test|success
+          - not test|changed
+      tags: [ json ]
+
+#-------------------------------------------------------
+#-------------------------------------------------------
+    - name: "TEST 221 - Load ASN Pool from file (Yaml), Check Mode 1/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.yaml') }}"
+
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ yaml ]
+
+    - name: Check TEST 221
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ yaml ]
+
+#-------------------------------------------------------
+    - name: "TEST 222 - Load ASN Pool from file (Yaml), Check Mode 2/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.yaml') }}"
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ yaml ]
+
+    - name: Check TEST 222
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ yaml ]
+
+#-------------------------------------------------------
+    - name: "TEST 223 - Load ASN Pool from file(Yaml), 1/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.yaml') }}"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ yaml ]
+
+    - name: Check TEST 223
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ yaml ]
+
+#-------------------------------------------------------
+    - name: "TEST 224 - Load ASN Pool from File(Yaml), 2/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.yaml') }}"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ yaml ]
+
+    - name: Check TEST 224
+      assert:
+        that:
+          - test|success
+          - not test|changed
+      tags: [ yaml ]
+
+#-------------------------------------------------------
+    - name: "TEST 225 - Delete ASN Pool from File(Yaml), Check Mode 1/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.yaml') }}"
+
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ yaml ]
+
+    - name: Check TEST 225
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ yaml ]
+
+#-------------------------------------------------------
+    - name: "TEST 226 - Delete ASN Pool from File(Yaml), Check Mode 2/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.yaml') }}"
+
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ yaml ]
+
+    - name: Check Init TEST 226
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ yaml ]
+
+#-------------------------------------------------------
+    - name: "TEST 227 - Delete ASN Pool from File(Yaml), 1/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.yaml') }}"
+
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ yaml ]
+
+    - name: Check Init TEST 227
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ yaml ]
+#-------------------------------------------------------
+    - name: "TEST 228 - Delete ASN Pool from File(Yaml), 2/2"
+      aos_asn_pool:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/asn_pool_saved.yaml') }}"
+
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ yaml ]
+
+    - name: Check Init TEST 228
+      assert:
+        that:
+          - test|success
+          - not test|changed
+      tags: [ yaml ]

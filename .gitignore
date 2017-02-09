@@ -93,3 +93,4 @@ acceptance_config.yml
 boxes/*
 .vagrant
 .idea/
+tests/resources/*_saved.*

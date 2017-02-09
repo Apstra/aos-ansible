@@ -45,13 +45,14 @@
         state: present
       register: test
       ignore_errors: True
+      tags: [ negative, param ]
 
-    # - debug: var=test
     - name: Check TEST 101
       assert:
         that:
           - test|failed
           - "test.msg.find('missing required arguments') != -1"
+      tags: [ negative, param ]
 #-------------------------------------------------------
     - name: "TEST 102 - Name and ID are mutually exclusive"
       aos_template:
@@ -61,6 +62,7 @@
         state: present
       register: test
       ignore_errors: True
+      tags: [ negative, param ]
 
     # - debug: var=test102
     - name: Check TEST 102
@@ -68,6 +70,7 @@
         that:
           - test|failed
           - "test.msg.find('parameters are mutually exclusive') != -1"
+      tags: [ negative, param ]
 #-------------------------------------------------------
     - name: "TEST 103 - Session is a dict"
       aos_template:
@@ -76,13 +79,14 @@
         state: present
       register: test
       ignore_errors: True
-
+      tags: [ negative, param ]
     # - debug: var=test
     - name: Check TEST 103
       assert:
         that:
           - test|failed
           - "test.msg.find('argument session is of type') != -1"
+      tags: [ negative, param ]
 #-------------------------------------------------------
 
     - name: "TEST 104 - Session is not valid"
@@ -92,6 +96,7 @@
         state: present
       register: test
       ignore_errors: True
+      tags: [ negative, param ]
 
     - debug: var=test
     - name: Check TEST 104
@@ -99,7 +104,7 @@
         that:
           - test|failed
           - "test.msg.find('Unable to login to the AOS server') != -1"
-
+      tags: [ negative, param ]
 #-------------------------------------------------------
 # TESTS 200 - Valid Inputs
 #-------------------------------------------------------
@@ -111,79 +116,82 @@
         state: absent
       register: test
       ignore_errors: True
-
-    # - debug: var=test
+      tags: [ json ]
 
     - name: Check TEST 200
       assert:
         that:
           - test|success
-
+      tags: [ json ]
 #-------------------------------------------------------
-    - name: "TEST 201 - Create Template - Check mode 1/2"
+    - name: "TEST 201 - Create Template from File(JSON) - Check mode 1/2"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_01.json
+        content:  "{{ lookup('file', 'resources/template_01.json') }}"
         state: present
       register: test
       check_mode: yes
       ignore_errors: True
-
+      tags: [ json ]
     - name: Check TEST 201
       assert:
         that:
           - test|success
           - test|changed
+      tags: [ json ]
 #-------------------------------------------------------
-    - name: "TEST 202 - Create Template - Check mode 2/2"
+    - name: "TEST 202 - Create Template from File(JSON) - Check mode 2/2"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_01.json
+        content:  "{{ lookup('file', 'resources/template_01.json') }}"
         state: present
       register: test
       check_mode: yes
       ignore_errors: True
+      tags: [ json ]
 
     - name: Check TEST 202
       assert:
         that:
           - test|success
           - test|changed
-
+      tags: [ json ]
 #-------------------------------------------------------
-    - name: "TEST 203 - Create Template - 1/2"
+    - name: "TEST 203 - Create Template from File(JSON) - 1/2"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_01.json
+        content:  "{{ lookup('file', 'resources/template_01.json') }}"
         state: present
       register: test
       check_mode: no
       ignore_errors: True
+      tags: [ json ]
 
     - name: Check TEST 203
       assert:
         that:
           - test|success
           - test|changed
-
+      tags: [ json ]
 #-------------------------------------------------------
-    - name: "TEST 204 - Create Template - 2/2"
+    - name: "TEST 204 - Create Template from File(JSON) - 2/2"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_01.json
+        content:  "{{ lookup('file', 'resources/template_01.json') }}"
         state: present
       register: test
       check_mode: no
       ignore_errors: True
+      tags: [ json ]
 
     - name: Check TEST 204
       assert:
         that:
           - test|success
           - not test|changed
-
+      tags: [ json ]
 #-------------------------------------------------------
-    - name: "TEST 205 - Create Template - Check mode when exist"
+    - name: "TEST 205 - Check if Template exist by Name - Check mode when exist"
       aos_template:
         session: "{{ session_ok }}"
         name: "my-template"
@@ -191,18 +199,19 @@
       register: test
       check_mode: yes
       ignore_errors: True
+      tags: [ json ]
 
     - name: Check TEST 205
       assert:
         that:
           - test|success
           - not test|changed
-
+      tags: [ json ]
 #-------------------------------------------------------
-    - name: "TEST 206.1 - Delete Template - Check mode when exist"
+    - name: "TEST 206.1 - Delete Template from File(JSON) - Check mode when exist 1/2"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_01.json
+        content:  "{{ lookup('file', 'resources/template_01.json') }}"
         state: absent
       register: test
       check_mode: yes
@@ -215,7 +224,7 @@
           - test|changed
 
 #-------------------------------------------------------
-    - name: "TEST 206.2 - Delete Template - Check mode when exist"
+    - name: "TEST 206.2 - Delete Template - Check mode when exist 2/2"
       aos_template:
         session: "{{ session_ok }}"
         name: "my-template"
@@ -281,23 +290,34 @@
     - name: "INIT 210 - Create Template"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_01.json
+        content:  "{{ lookup('file', 'resources/template_01.json') }}"
         state: present
-      register: test
+      register: mytemp
       check_mode: no
       ignore_errors: True
 
     - name: Check TEST 210
       assert:
         that:
-          - test|success
-          - test|changed
+          - mytemp|success
+          - mytemp|changed
 
 #-------------------------------------------------------
-    - name: "TEST 210 - Save Template into a file "
+    - name: "TEST 210 - Save Template into a JSON file "
       copy:
-        content: "{{ test.value | to_nice_json }}"
+        content: "{{ mytemp.value | to_nice_json }}"
         dest: resources/template_saved.json
+
+    - name: Check TEST 210
+      assert:
+        that:
+          - test|success
+          # - not test|changed
+#-------------------------------------------------------
+    - name: "TEST 210 - Save Template into a Yaml file "
+      copy:
+        content: "{{ mytemp.value | to_nice_yaml }}"
+        dest: resources/template_saved.yaml
 
     - name: Check TEST 210
       assert:
@@ -306,25 +326,25 @@
           # - not test|changed
 
 #-------------------------------------------------------
-    - name: "INIT 211 - Delete Template"
+    - name: "INIT 211 - Delete Template "
       aos_template:
         session: "{{ session_ok }}"
         name: "my-template"
         state: absent
       register: test
+      check_mode: no
       ignore_errors: True
 
-    - name: Check Init TEST 211
+    - name: Check TEST 211
       assert:
         that:
           - test|success
-          - test|changed
 
 #-------------------------------------------------------
-    - name: "TEST 211 - Load Template from file, Check Mode 1/2"
+    - name: "TEST 211 - Load Template from File (yaml), Check Mode 1/2"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_saved.json
+        content: "{{ lookup('file', 'resources/template_saved.yaml') }}"
         state: present
       register: test
       check_mode: yes
@@ -337,10 +357,10 @@
           - test|changed
 
 #-------------------------------------------------------
-    - name: "TEST 212 - Load Template from file, Check Mode 2/2"
+    - name: "TEST 212 - Load Template from file(yaml), Check Mode 2/2"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_saved.json
+        content: "{{ lookup('file', 'resources/template_saved.yaml') }}"
         state: present
       register: test
       check_mode: yes
@@ -353,10 +373,10 @@
           - test|changed
 
 #-------------------------------------------------------
-    - name: "TEST 213 - Load Template from file, 1/2"
+    - name: "TEST 213 - Load Template from file (yaml), 1/2"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_saved.json
+        content: "{{ lookup('file', 'resources/template_saved.yaml') }}"
         state: present
       register: test
       check_mode: no
@@ -369,10 +389,10 @@
           - test|changed
 
 #-------------------------------------------------------
-    - name: "TEST 214 - Load Template from file, 2/2"
+    - name: "TEST 214 - Load Template from file (yaml), 2/2"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_saved.json
+        content: "{{ lookup('file', 'resources/template_saved.yaml') }}"
         state: present
       register: test
       check_mode: no
@@ -385,10 +405,10 @@
           - not test|changed
 
 #-------------------------------------------------------
-    - name: "TEST 215 - Delete Template from File, Check Mode 1/2"
+    - name: "TEST 215 - Delete Template from File (yaml), Check Mode 1/2"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_saved.json
+        content: "{{ lookup('file', 'resources/template_saved.yaml') }}"
         state: absent
       register: test
       check_mode: yes
@@ -400,10 +420,10 @@
           - test|success
           - test|changed
 #-------------------------------------------------------
-    - name: "TEST 216 - Delete Template from File, Check Mode 2/2"
+    - name: "TEST 216 - Delete Template from File (yaml), Check Mode 2/2"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_saved.json
+        content: "{{ lookup('file', 'resources/template_saved.yaml') }}"
         state: absent
       register: test
       check_mode: yes
@@ -415,10 +435,10 @@
           - test|success
           - test|changed
 #-------------------------------------------------------
-    - name: "TEST 217 - Delete Template from File, 1/2"
+    - name: "TEST 217 - Delete Template from File (yaml), 1/2"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_saved.json
+        content: "{{ lookup('file', 'resources/template_saved.yaml') }}"
         state: absent
       register: test
       check_mode: no
@@ -430,10 +450,10 @@
           - test|success
           - test|changed
 #-------------------------------------------------------
-    - name: "TEST 218 - Delete Template from File, 2/2"
+    - name: "TEST 218 - Delete Template from File (yaml), 2/2"
       aos_template:
         session: "{{ session_ok }}"
-        src: resources/template_saved.json
+        content: "{{ lookup('file', 'resources/template_saved.yaml') }}"
         state: absent
       register: test
       check_mode: no

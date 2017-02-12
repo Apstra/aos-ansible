@@ -1,0 +1,24 @@
+language: python
+python:
+  - 2.7
+
+sudo: required
+dist: trusty
+
+env:
+  - AOS_VERSION=1.1
+  - AOS_VERSION=1.0
+
+install:
+## Create Docker with Ansible from devel and all dependencies
+  - make build
+  - docker pull juniper/ravello-ansible:v0.1
+
+  - cd tests`
+
+script:
+## Start Virtual topology on Ravello with 1 AOS Server and collect IP addresses
+  - docker run -t -i -v $(pwd):/project -e "AOS_VERSION=$(echo $AOS_VERSION)" -e "TRAVIS_JOB_ID=$(echo $TRAVIS_JOB_ID)" -e "TRAVIS_COMMIT=$(echo $TRAVIS_COMMIT)" juniper/ravello-ansible:v0.1 ansible-playbook -i ravello.ini pb.rav.init-ci.yaml
+
+## Execute Tests with Docker
+  - docker run -t -i -v $(pwd):/project apstra/aos-ansible ansible-playbook -i ravello.ini pb.aos_ip_pool.yaml

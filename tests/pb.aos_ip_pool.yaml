@@ -375,460 +375,460 @@
           - test|changed
       tags: [ json ]
 #-------------------------------------------------------
-    - name: "TEST 211 - Load Ip Pool from file (Json), Check Mode 1/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
-        state: present
-      register: test
-      check_mode: yes
-      ignore_errors: True
-      tags: [ json ]
-
-    - name: Check TEST 211
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ json ]
-#-------------------------------------------------------
-    - name: "TEST 212 - Load Ip Pool from file (Json), Check Mode 2/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
-        state: present
-      register: test
-      check_mode: yes
-      ignore_errors: True
-      tags: [ json ]
-
-    - name: Check TEST 212
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ json ]
-
-#-------------------------------------------------------
-    - name: "TEST 213 - Load Ip Pool from file(JSON), 1/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
-        state: present
-      register: test
-      check_mode: no
-      ignore_errors: True
-      tags: [ json ]
-
-    - name: Check TEST 213
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ json ]
-
-#-------------------------------------------------------
-    - name: "TEST 214 - Load Ip Pool from File(JSON), 2/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
-        state: present
-      register: test
-      check_mode: no
-      ignore_errors: True
-      tags: [ json ]
-
-    - name: Check TEST 214
-      assert:
-        that:
-          - test|success
-          - not test|changed
-      tags: [ json ]
-
-#-------------------------------------------------------
-    - name: "TEST 215 - Delete IP Pool from File(JSON), Check Mode 1/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
-        state: absent
-      register: test
-      check_mode: yes
-      ignore_errors: True
-      tags: [ json ]
-
-    - name: Check TEST 215
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ json ]
-#-------------------------------------------------------
-    - name: "TEST 216 - Delete IP Pool from File(JSON), Check Mode 2/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
-        state: absent
-      register: test
-      check_mode: yes
-      ignore_errors: True
-      tags: [ json ]
-
-    - name: Check Init TEST 216
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ json ]
-
-#-------------------------------------------------------
-    - name: "TEST 217 - Delete IP Pool from File(JSON), 1/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
-        state: absent
-      register: test
-      check_mode: no
-      ignore_errors: True
-      tags: [ json ]
-
-    - name: Check Init TEST 217
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ json ]
-
-#-------------------------------------------------------
-    - name: "TEST 218 - Delete IP Pool from File(JSON), 2/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
-        state: absent
-      register: test
-      check_mode: no
-      ignore_errors: True
-      tags: [ json ]
-
-    - name: Check Init TEST 218
-      assert:
-        that:
-          - test|success
-          - not test|changed
-      tags: [ json ]
-
-#-------------------------------------------------------
-#-------------------------------------------------------
-    - name: "TEST 221 - Load Ip Pool from file (Yaml), Check Mode 1/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
-        # content_format: yaml
-        state: present
-      register: test
-      check_mode: yes
-      ignore_errors: True
-      tags: [ yaml ]
-
-    - name: Check TEST 221
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ yaml ]
-
-#-------------------------------------------------------
-    - name: "TEST 222 - Load Ip Pool from file (Yaml), Check Mode 2/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
-        # content_format: yaml
-        state: present
-      register: test
-      check_mode: yes
-      ignore_errors: True
-      tags: [ yaml ]
-
-    - name: Check TEST 222
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ yaml ]
-
-#-------------------------------------------------------
-    - name: "TEST 223 - Load Ip Pool from file(Yaml), 1/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
-        # content_format: yaml
-        state: present
-      register: test
-      check_mode: no
-      ignore_errors: True
-      tags: [ yaml ]
-
-    - name: Check TEST 223
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ yaml ]
-
-#-------------------------------------------------------
-    - name: "TEST 224 - Load Ip Pool from File(Yaml), 2/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
-        # content_format: yaml
-        state: present
-      register: test
-      check_mode: no
-      ignore_errors: True
-      tags: [ yaml ]
-
-    - name: Check TEST 224
-      assert:
-        that:
-          - test|success
-          - not test|changed
-      tags: [ yaml ]
-
-#-------------------------------------------------------
-    - name: "TEST 225 - Delete IP Pool from File(Yaml), Check Mode 1/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
-        # content_format: yaml
-        state: absent
-      register: test
-      check_mode: yes
-      ignore_errors: True
-      tags: [ yaml ]
-
-    - name: Check TEST 225
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ yaml ]
-
-#-------------------------------------------------------
-    - name: "TEST 226 - Delete IP Pool from File(Yaml), Check Mode 2/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
-        # content_format: yaml
-        state: absent
-      register: test
-      check_mode: yes
-      ignore_errors: True
-      tags: [ yaml ]
-
-    - name: Check Init TEST 226
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ yaml ]
-
-#-------------------------------------------------------
-    - name: "TEST 227 - Delete IP Pool from File(Yaml), 1/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
-        # content_format: yaml
-        state: absent
-      register: test
-      check_mode: no
-      ignore_errors: True
-      tags: [ yaml ]
-
-    - name: Check Init TEST 227
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ yaml ]
-#-------------------------------------------------------
-    - name: "TEST 228 - Delete IP Pool from File(Yaml), 2/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
-        # content_format: yaml
-        state: absent
-      register: test
-      check_mode: no
-      ignore_errors: True
-      tags: [ yaml ]
-
-    - name: Check Init TEST 228
-      assert:
-        that:
-          - test|success
-          - not test|changed
-      tags: [ yaml ]
-#-------------------------------------------------------
-    - name: TEST 230 Create Variable with Content
-      set_fact:
-        content_var_ok:
-          display_name: my-ip-pool
-          id: 4276738d-6f86-4034-9656-4bff94a34ea7
-          subnets:
-            - network: 172.10.0.0/16
-            - network: 172.12.0.0/16
-      tags: [ var ]
-#-------------------------------------------------------
-    - name: "TEST 231 - Load Ip Pool from Variable, Check Mode 1/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content:
-          display_name: my-ip-pool
-          id: 4276738d-6f86-4034-9656-4bff94a34ea7
-          subnets:
-            - network: 172.10.0.0/16
-            - network: 172.12.0.0/16
-        # content_format: var
-        state: present
-      register: test
-      check_mode: yes
-      ignore_errors: True
-      tags: [ var ]
-
-    - name: Check TEST 231
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ var ]
-#-------------------------------------------------------
-    - name: "TEST 232 - Load Ip Pool from Variable, Check Mode 2/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ content_var_ok }}"
-        # content_format: var
-        state: present
-      register: test
-      check_mode: yes
-      ignore_errors: True
-      tags: [ var ]
-
-    - name: Check TEST 232
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ var ]
-
-#-------------------------------------------------------
-    - name: "TEST 233 - Load Ip Pool from Variable, 1/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ content_var_ok }}"
-        # content_format: var
-        state: present
-      register: test
-      check_mode: no
-      ignore_errors: True
-      tags: [ var ]
-
-    - name: Check TEST 233
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ var ]
-
-#-------------------------------------------------------
-    - name: "TEST 234 - Load Ip Pool from Variable, 2/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ content_var_ok }}"
-        # content_format: var
-        state: present
-      register: test
-      check_mode: no
-      ignore_errors: True
-      tags: [ var ]
-
-    - name: Check TEST 234
-      assert:
-        that:
-          - test|success
-          - not test|changed
-      tags: [ var ]
-
-#-------------------------------------------------------
-    - name: "TEST 235 - Delete IP Pool from Variable, Check Mode 1/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ content_var_ok }}"
-        # content_format: var
-        state: absent
-      register: test
-      check_mode: yes
-      ignore_errors: True
-      tags: [ var ]
-
-    - name: Check TEST 235
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ var ]
-
-#-------------------------------------------------------
-    - name: "TEST 236 - Delete IP Pool from Variable, Check Mode 2/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ content_var_ok }}"
-        # content_format: var
-        state: absent
-      register: test
-      check_mode: yes
-      ignore_errors: True
-      tags: [ var ]
-
-    - name: Check Init TEST 236
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ var ]
-
-#-------------------------------------------------------
-    - name: "TEST 237 - Delete IP Pool from Variable, 1/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ content_var_ok }}"
-        # content_format: var
-        state: absent
-      register: test
-      check_mode: no
-      ignore_errors: True
-      tags: [ var ]
-
-    - name: Check Init TEST 237
-      assert:
-        that:
-          - test|success
-          - test|changed
-      tags: [ var ]
-
-#-------------------------------------------------------
-    - name: "TEST 238 - Delete IP Pool from Variable, 2/2"
-      aos_ip_pool:
-        session: "{{ session_ok }}"
-        content: "{{ content_var_ok }}"
-        # content_format: var
-        state: absent
-      register: test
-      check_mode: no
-      ignore_errors: True
-      tags: [ var ]
-
-    - name: Check Init TEST 238
-      assert:
-        that:
-          - test|success
-          - not test|changed
-      tags: [ var ]
+#     - name: "TEST 211 - Load Ip Pool from file (Json), Check Mode 1/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
+#         state: present
+#       register: test
+#       check_mode: yes
+#       ignore_errors: True
+#       tags: [ json ]
+#
+#     - name: Check TEST 211
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ json ]
+# #-------------------------------------------------------
+#     - name: "TEST 212 - Load Ip Pool from file (Json), Check Mode 2/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
+#         state: present
+#       register: test
+#       check_mode: yes
+#       ignore_errors: True
+#       tags: [ json ]
+#
+#     - name: Check TEST 212
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ json ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 213 - Load Ip Pool from file(JSON), 1/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
+#         state: present
+#       register: test
+#       check_mode: no
+#       ignore_errors: True
+#       tags: [ json ]
+#
+#     - name: Check TEST 213
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ json ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 214 - Load Ip Pool from File(JSON), 2/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
+#         state: present
+#       register: test
+#       check_mode: no
+#       ignore_errors: True
+#       tags: [ json ]
+#
+#     - name: Check TEST 214
+#       assert:
+#         that:
+#           - test|success
+#           - not test|changed
+#       tags: [ json ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 215 - Delete IP Pool from File(JSON), Check Mode 1/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
+#         state: absent
+#       register: test
+#       check_mode: yes
+#       ignore_errors: True
+#       tags: [ json ]
+#
+#     - name: Check TEST 215
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ json ]
+# #-------------------------------------------------------
+#     - name: "TEST 216 - Delete IP Pool from File(JSON), Check Mode 2/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
+#         state: absent
+#       register: test
+#       check_mode: yes
+#       ignore_errors: True
+#       tags: [ json ]
+#
+#     - name: Check Init TEST 216
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ json ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 217 - Delete IP Pool from File(JSON), 1/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
+#         state: absent
+#       register: test
+#       check_mode: no
+#       ignore_errors: True
+#       tags: [ json ]
+#
+#     - name: Check Init TEST 217
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ json ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 218 - Delete IP Pool from File(JSON), 2/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.json') }}"
+#         state: absent
+#       register: test
+#       check_mode: no
+#       ignore_errors: True
+#       tags: [ json ]
+#
+#     - name: Check Init TEST 218
+#       assert:
+#         that:
+#           - test|success
+#           - not test|changed
+#       tags: [ json ]
+#
+# #-------------------------------------------------------
+# #-------------------------------------------------------
+#     - name: "TEST 221 - Load Ip Pool from file (Yaml), Check Mode 1/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
+#         # content_format: yaml
+#         state: present
+#       register: test
+#       check_mode: yes
+#       ignore_errors: True
+#       tags: [ yaml ]
+#
+#     - name: Check TEST 221
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ yaml ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 222 - Load Ip Pool from file (Yaml), Check Mode 2/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
+#         # content_format: yaml
+#         state: present
+#       register: test
+#       check_mode: yes
+#       ignore_errors: True
+#       tags: [ yaml ]
+#
+#     - name: Check TEST 222
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ yaml ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 223 - Load Ip Pool from file(Yaml), 1/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
+#         # content_format: yaml
+#         state: present
+#       register: test
+#       check_mode: no
+#       ignore_errors: True
+#       tags: [ yaml ]
+#
+#     - name: Check TEST 223
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ yaml ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 224 - Load Ip Pool from File(Yaml), 2/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
+#         # content_format: yaml
+#         state: present
+#       register: test
+#       check_mode: no
+#       ignore_errors: True
+#       tags: [ yaml ]
+#
+#     - name: Check TEST 224
+#       assert:
+#         that:
+#           - test|success
+#           - not test|changed
+#       tags: [ yaml ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 225 - Delete IP Pool from File(Yaml), Check Mode 1/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
+#         # content_format: yaml
+#         state: absent
+#       register: test
+#       check_mode: yes
+#       ignore_errors: True
+#       tags: [ yaml ]
+#
+#     - name: Check TEST 225
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ yaml ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 226 - Delete IP Pool from File(Yaml), Check Mode 2/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
+#         # content_format: yaml
+#         state: absent
+#       register: test
+#       check_mode: yes
+#       ignore_errors: True
+#       tags: [ yaml ]
+#
+#     - name: Check Init TEST 226
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ yaml ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 227 - Delete IP Pool from File(Yaml), 1/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
+#         # content_format: yaml
+#         state: absent
+#       register: test
+#       check_mode: no
+#       ignore_errors: True
+#       tags: [ yaml ]
+#
+#     - name: Check Init TEST 227
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ yaml ]
+# #-------------------------------------------------------
+#     - name: "TEST 228 - Delete IP Pool from File(Yaml), 2/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ lookup('file', 'resources/ip_pool_saved.yaml') }}"
+#         # content_format: yaml
+#         state: absent
+#       register: test
+#       check_mode: no
+#       ignore_errors: True
+#       tags: [ yaml ]
+#
+#     - name: Check Init TEST 228
+#       assert:
+#         that:
+#           - test|success
+#           - not test|changed
+#       tags: [ yaml ]
+# #-------------------------------------------------------
+#     - name: TEST 230 Create Variable with Content
+#       set_fact:
+#         content_var_ok:
+#           display_name: my-ip-pool
+#           id: 4276738d-6f86-4034-9656-4bff94a34ea7
+#           subnets:
+#             - network: 172.10.0.0/16
+#             - network: 172.12.0.0/16
+#       tags: [ var ]
+# #-------------------------------------------------------
+#     - name: "TEST 231 - Load Ip Pool from Variable, Check Mode 1/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content:
+#           display_name: my-ip-pool
+#           id: 4276738d-6f86-4034-9656-4bff94a34ea7
+#           subnets:
+#             - network: 172.10.0.0/16
+#             - network: 172.12.0.0/16
+#         # content_format: var
+#         state: present
+#       register: test
+#       check_mode: yes
+#       ignore_errors: True
+#       tags: [ var ]
+#
+#     - name: Check TEST 231
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ var ]
+# #-------------------------------------------------------
+#     - name: "TEST 232 - Load Ip Pool from Variable, Check Mode 2/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ content_var_ok }}"
+#         # content_format: var
+#         state: present
+#       register: test
+#       check_mode: yes
+#       ignore_errors: True
+#       tags: [ var ]
+#
+#     - name: Check TEST 232
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ var ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 233 - Load Ip Pool from Variable, 1/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ content_var_ok }}"
+#         # content_format: var
+#         state: present
+#       register: test
+#       check_mode: no
+#       ignore_errors: True
+#       tags: [ var ]
+#
+#     - name: Check TEST 233
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ var ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 234 - Load Ip Pool from Variable, 2/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ content_var_ok }}"
+#         # content_format: var
+#         state: present
+#       register: test
+#       check_mode: no
+#       ignore_errors: True
+#       tags: [ var ]
+#
+#     - name: Check TEST 234
+#       assert:
+#         that:
+#           - test|success
+#           - not test|changed
+#       tags: [ var ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 235 - Delete IP Pool from Variable, Check Mode 1/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ content_var_ok }}"
+#         # content_format: var
+#         state: absent
+#       register: test
+#       check_mode: yes
+#       ignore_errors: True
+#       tags: [ var ]
+#
+#     - name: Check TEST 235
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ var ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 236 - Delete IP Pool from Variable, Check Mode 2/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ content_var_ok }}"
+#         # content_format: var
+#         state: absent
+#       register: test
+#       check_mode: yes
+#       ignore_errors: True
+#       tags: [ var ]
+#
+#     - name: Check Init TEST 236
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ var ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 237 - Delete IP Pool from Variable, 1/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ content_var_ok }}"
+#         # content_format: var
+#         state: absent
+#       register: test
+#       check_mode: no
+#       ignore_errors: True
+#       tags: [ var ]
+#
+#     - name: Check Init TEST 237
+#       assert:
+#         that:
+#           - test|success
+#           - test|changed
+#       tags: [ var ]
+#
+# #-------------------------------------------------------
+#     - name: "TEST 238 - Delete IP Pool from Variable, 2/2"
+#       aos_ip_pool:
+#         session: "{{ session_ok }}"
+#         content: "{{ content_var_ok }}"
+#         # content_format: var
+#         state: absent
+#       register: test
+#       check_mode: no
+#       ignore_errors: True
+#       tags: [ var ]
+#
+#     - name: Check Init TEST 238
+#       assert:
+#         that:
+#           - test|success
+#           - not test|changed
+#       tags: [ var ]

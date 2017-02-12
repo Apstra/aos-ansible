@@ -460,27 +460,10 @@
           - not test|changed
 
 #-------------------------------------------------------
-    - name: "TEST 219 - Load External Router from File with wrong format JSON instead of Yaml"
-      aos_external_router:
-        session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
-        content_format: json
-        state: present
-      register: test
-      check_mode: no
-      ignore_errors: True
-
-    - name: Check Init TEST 219
-      assert:
-        that:
-          - test|failed
-
-#-------------------------------------------------------
     - name: "TEST 221 - Load External Router from file (Yaml), Check Mode 1/2"
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
-        content_format: yaml
         state: present
       register: test
       check_mode: yes
@@ -497,7 +480,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
-        content_format: yaml
         state: present
       register: test
       check_mode: yes
@@ -514,7 +496,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
-        content_format: yaml
         state: present
       register: test
       check_mode: no
@@ -531,7 +512,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
-        content_format: yaml
         state: present
       register: test
       check_mode: no
@@ -548,7 +528,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
-        content_format: yaml
         state: absent
       register: test
       check_mode: yes
@@ -564,7 +543,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
-        content_format: yaml
         state: absent
       register: test
       check_mode: yes
@@ -580,7 +558,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
-        content_format: yaml
         state: absent
       register: test
       check_mode: no
@@ -596,7 +573,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ lookup('file', 'resources/external_router_saved.yaml') }}"
-        content_format: yaml
         state: absent
       register: test
       check_mode: no
@@ -626,7 +602,6 @@
           id: 4276738d-6f86-4034-9656-4bff94a34ea7
           address: 10.0.0.1
           asn: 6666
-        content_format: var
         state: present
       register: test
       check_mode: yes
@@ -643,7 +618,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ content_var_ok }}"
-        content_format: var
         state: present
       register: test
       check_mode: yes
@@ -660,7 +634,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ content_var_ok }}"
-        content_format: var
         state: present
       register: test
       check_mode: no
@@ -677,7 +650,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ content_var_ok }}"
-        content_format: var
         state: present
       register: test
       check_mode: no
@@ -694,7 +666,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ content_var_ok }}"
-        content_format: var
         state: absent
       register: test
       check_mode: yes
@@ -710,7 +681,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ content_var_ok }}"
-        content_format: var
         state: absent
       register: test
       check_mode: yes
@@ -727,7 +697,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ content_var_ok }}"
-        content_format: var
         state: absent
       register: test
       check_mode: no
@@ -743,7 +712,6 @@
       aos_external_router:
         session: "{{ session_ok }}"
         content: "{{ content_var_ok }}"
-        content_format: var
         state: absent
       register: test
       check_mode: no

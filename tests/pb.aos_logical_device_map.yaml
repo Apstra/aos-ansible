@@ -1,6 +1,6 @@
 
 ---
-- name: Test aos_logical_device module
+- name: Test aos_logical_device_map module
   hosts: aos-server
   connection: local
   gather_facts: no
@@ -28,6 +28,7 @@
           }
         body_format: json
       register: session
+      tags: [ negative, param ]
 
     - name: Format token into session_ok variable
       set_fact:
@@ -35,16 +36,18 @@
           server: "{{address}}"
           port: "{{port}}"
           token: "{{session.json.token}}"
+      tags: [ negative, param ]
 
 #-------------------------------------------------------
 # TESTS 100 - Wrong Inputs
 #-------------------------------------------------------
     - name: "TEST 101 - Session is mandatory"
-      aos_logical_device:
-        name: "my-logical-device"
+      aos_logical_device_map:
+        name: "my-logical-device-map"
         state: present
       register: test
       ignore_errors: True
+      tags: [ negative, param ]
 
     # - debug: var=test
     - name: Check TEST 101
@@ -52,15 +55,18 @@
         that:
           - test|failed
           - "test.msg.find('missing required arguments') != -1"
+      tags: [ negative, param ]
+
 #-------------------------------------------------------
     - name: "TEST 102 - Name and ID are mutually exclusive"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
         name: "myName"
         id: "myID"
         state: present
       register: test
       ignore_errors: True
+      tags: [ negative, param ]
 
     # - debug: var=test102
     - name: Check TEST 102
@@ -68,30 +74,34 @@
         that:
           - test|failed
           - "test.msg.find('parameters are mutually exclusive') != -1"
+      tags: [ negative, param ]
+
 #-------------------------------------------------------
     - name: "TEST 103 - Session is a dict"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "my-session"
-        name: "my-logical-device"
+        name: "my-logical-device-map"
         state: present
       register: test
       ignore_errors: True
+      tags: [ negative, param ]
 
-    # - debug: var=test
     - name: Check TEST 103
       assert:
         that:
           - test|failed
           - "test.msg.find('argument session is of type') != -1"
+      tags: [ negative, param ]
 #-------------------------------------------------------
 
     - name: "TEST 104 - Session is not valid"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_wrong_token }}"
-        name: "my-logical-device"
+        name: "my-logical-device-map"
         state: present
       register: test
       ignore_errors: True
+      tags: [ negative, param ]
 
     - debug: var=test
     - name: Check TEST 104
@@ -99,18 +109,21 @@
         that:
           - test|failed
           - "test.msg.find('Unable to login to the AOS server') != -1"
+      tags: [ negative, param ]
 
 #-------------------------------------------------------
 # TESTS 200 - Valid Inputs
 #-------------------------------------------------------
 
     - name: "SETUP 200 - Cleanup existing server"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        name: "my-logical-device"
+        name: "my-logical-device-map"
         state: absent
       register: test
       ignore_errors: True
+
+    # - debug: var=test
 
     - name: Check TEST 200
       assert:
@@ -119,9 +132,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 201 - Create Logical Device - Check mode 1/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_01.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_01.json') }}"
         state: present
       register: test
       check_mode: yes
@@ -134,9 +147,9 @@
           - test|changed
 #-------------------------------------------------------
     - name: "TEST 202 - Create Logical Device - Check mode 2/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_01.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_01.json') }}"
         state: present
       register: test
       check_mode: yes
@@ -150,9 +163,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 203 - Create Logical Device - 1/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_01.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_01.json') }}"
         state: present
       register: test
       check_mode: no
@@ -166,9 +179,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 204 - Create Logical Device - 2/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_01.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_01.json') }}"
         state: present
       register: test
       check_mode: no
@@ -182,9 +195,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 205 - Create Logical Device - Check mode when exist"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        name: "my-logical-device"
+        name: "my-logical-device-map"
         state: present
       register: test
       check_mode: yes
@@ -198,9 +211,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 206.1 - Delete Logical Device - Check mode when exist"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_01.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_01.json') }}"
         state: absent
       register: test
       check_mode: yes
@@ -214,9 +227,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 206.2 - Delete Logical Device - Check mode when exist"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        name: "my-logical-device"
+        name: "my-logical-device-map"
         state: absent
       register: test
       check_mode: yes
@@ -230,9 +243,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 207 - Delete Logical Device - 1/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        name: "my-logical-device"
+        name: "my-logical-device-map"
         state: absent
       register: test
       check_mode: no
@@ -246,9 +259,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 208 - Delete Logical Device - 2/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        name: "my-logical-device"
+        name: "my-logical-device-map"
         state: absent
       register: test
       check_mode: no
@@ -262,9 +275,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 209 - Delete Logical Device - Check mode when absent"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        name: "my-logical-device"
+        name: "my-logical-device-map"
         state: absent
       register: test
       check_mode: yes
@@ -277,9 +290,9 @@
           - not test|changed
 #-------------------------------------------------------
     - name: "INIT 210 - Create Logical Device"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_01.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_01.json') }}"
         state: present
       register: test
       check_mode: no
@@ -295,7 +308,7 @@
     - name: "TEST 210 - Save Logical Device into a file "
       copy:
         content: "{{ test.value | to_nice_json }}"
-        dest: resources/logical_device_saved.json
+        dest: resources/logical_device_map_saved.json
 
     - name: Check TEST 210
       assert:
@@ -305,9 +318,9 @@
 
 #-------------------------------------------------------
     - name: "INIT 211 - Delete Logical Device"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        name: "my-logical-device"
+        name: "my-logical-device-map"
         state: absent
       register: test
       ignore_errors: True
@@ -320,9 +333,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 211 - Load Logical Device from file, Check Mode 1/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_saved.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_saved.json') }}"
         state: present
       register: test
       check_mode: yes
@@ -336,9 +349,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 212 - Load Logical Device from file, Check Mode 2/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_saved.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_saved.json') }}"
         state: present
       register: test
       check_mode: yes
@@ -352,9 +365,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 213 - Load Logical Device from file, 1/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_saved.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_saved.json') }}"
         state: present
       register: test
       check_mode: no
@@ -368,9 +381,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 214 - Load Logical Device from file, 2/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_saved.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_saved.json') }}"
         state: present
       register: test
       check_mode: no
@@ -384,9 +397,9 @@
 
 #-------------------------------------------------------
     - name: "TEST 215 - Delete Logical Device from File, Check Mode 1/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_saved.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_saved.json') }}"
         state: absent
       register: test
       check_mode: yes
@@ -399,9 +412,9 @@
           - test|changed
 #-------------------------------------------------------
     - name: "TEST 216 - Delete Logical Device from File, Check Mode 2/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_saved.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_saved.json') }}"
         state: absent
       register: test
       check_mode: yes
@@ -414,9 +427,9 @@
           - test|changed
 #-------------------------------------------------------
     - name: "TEST 217 - Delete Logical Device from File, 1/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_saved.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_saved.json') }}"
         state: absent
       register: test
       check_mode: no
@@ -429,9 +442,9 @@
           - test|changed
 #-------------------------------------------------------
     - name: "TEST 218 - Delete Logical Device from File, 2/2"
-      aos_logical_device:
+      aos_logical_device_map:
         session: "{{ session_ok }}"
-        content: "{{ lookup('file', 'resources/logical_device_saved.json') }}"
+        content:  "{{ lookup('file', 'resources/logical_device_map_saved.json') }}"
         state: absent
       register: test
       check_mode: no

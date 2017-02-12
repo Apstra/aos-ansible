@@ -1,0 +1,34 @@
+{
+   "display_name": "my-logical-device",
+   "id": "my-logical-device-id",
+   "panels": [
+      {
+         "port_groups": [
+            {
+               "count": 7,
+               "speed": {
+                  "value": 10,
+                  "unit": "G"
+               },
+               "roles": [
+                  "server",
+                  "l2_server",
+                  "l3_server",
+                  "spine",
+                  "peer",
+                  "external_router"
+               ]
+            }
+         ],
+         "port_indexing": {
+            "order": "T-B, L-R",
+            "start_index": 1,
+            "schema": "absolute"
+         },
+         "panel_layout": {
+            "row_count": 1,
+            "column_count": 7
+         }
+      }
+   ]
+}

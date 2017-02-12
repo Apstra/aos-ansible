@@ -1,0 +1,59 @@
+{
+    "display_name": "my-logical-device-map",
+    "transforms": [
+        {
+            "logical": {
+                "panel_id": 1,
+                "port_range_end": 12,
+                "port_range_start": 1
+            },
+            "physical": {
+                "panel_id": 1,
+                "port_range_end": 12,
+                "port_range_start": 1
+            }
+        },
+        {
+            "logical": {
+                "panel_id": 1,
+                "port_range_end": 14,
+                "port_range_start": 13
+            },
+            "physical": {
+                "panel_id": 2,
+                "port_range_end": 14,
+                "port_range_start": 13
+            }
+        },
+        {
+            "logical": {
+                "panel_id": 1,
+                "port_range_end": 26,
+                "port_range_start": 15
+            },
+            "physical": {
+                "panel_id": 3,
+                "port_range_end": 26,
+                "port_range_start": 15
+            }
+        },
+        {
+            "logical": {
+                "panel_id": 1,
+                "port_range_end": 32,
+                "port_range_start": 27
+            },
+            "physical": {
+                "panel_id": 4,
+                "port_range_end": 32,
+                "port_range_start": 27
+            }
+        }
+    ],
+    "key": {
+        "hcl_id": "Cisco_9332PQ_NXOS",
+        "logical_device_id": "AOS-32x40-1",
+        "variant": "v1"
+    },
+    "id": "my-logical-device-map-id"
+}

@@ -9,7 +9,7 @@
       server: "{{address}}"
       port: "{{port}}"
       token: "WRONGTOKEN"
-    device_id: 525400E5486D
+    device_id: 52540032246E
   tasks:
 #-------------------------------------------------------
 # TESTS 000 - Open Session
@@ -28,6 +28,7 @@
           }
         body_format: json
       register: session
+      tags: [ yaml, json, var, input, param ]
 
     - name: Format token into session_ok variable
       set_fact:
@@ -35,6 +36,7 @@
           server: "{{address}}"
           port: "{{port}}"
           token: "{{session.json.token}}"
+      tags: [ yaml, json, var, input, param ]
 
 #-------------------------------------------------------
 # TESTS 100 - Wrong Inputs
@@ -45,6 +47,7 @@
         state: normal
       register: test
       ignore_errors: True
+      tags: [ param ]
 
     # - debug: var=test
     - name: Check TEST 101
@@ -52,6 +55,7 @@
         that:
           - test|failed
           - "test.msg.find('missing required arguments') != -1"
+      tags: [ param ]
 #-------------------------------------------------------
     - name: "TEST 102 - Name and ID are mutually exclusive"
       aos_device:
@@ -61,13 +65,14 @@
         state: normal
       register: test
       ignore_errors: True
-
+      tags: [ param ]
     # - debug: var=test102
     - name: Check TEST 102
       assert:
         that:
           - test|failed
           - "test.msg.find('parameters are mutually exclusive') != -1"
+      tags: [ param ]
 #-------------------------------------------------------
     - name: "TEST 103 - Session is a dict"
       aos_device:
@@ -76,14 +81,14 @@
         state: normal
       register: test
       ignore_errors: True
+      tags: [ param ]
 
-    # - debug: var=test
     - name: Check TEST 103
       assert:
         that:
           - test|failed
           - "test.msg.find('argument session is of type') != -1"
-
+      tags: [ param ]
 #-------------------------------------------------------
 # TESTS 200 - Valid Inputs
 #-------------------------------------------------------

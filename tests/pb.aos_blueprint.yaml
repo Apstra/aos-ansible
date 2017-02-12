@@ -1,0 +1,272 @@
+
+---
+- name: Test aos_blueprint module
+  hosts: aos-server
+  connection: local
+  gather_facts: no
+  vars:
+    session_wrong_token:
+      server: "{{address}}"
+      port: "{{port}}"
+      token: "WRONGTOKEN"
+
+  tasks:
+#-------------------------------------------------------
+# TESTS 000 - Open Session
+#-------------------------------------------------------
+    - name: Open Session on AOS Server
+      uri:
+        url: "http://{{address}}:{{port}}/api/user/login"
+        method: POST
+        status_code: 201
+        HEADER_Content-Type: 'application/json'
+        HEADER_Accept: 'application/json'
+        body: >
+          {
+            "username": "{{username}}",
+            "password": "{{password}}"
+          }
+        body_format: json
+      register: session
+
+    - name: Format token into session_ok variable
+      set_fact:
+        session_ok:
+          server: "{{address}}"
+          port: "{{port}}"
+          token: "{{session.json.token}}"
+
+#-------------------------------------------------------
+# TESTS 100 - Wrong Inputs
+#-------------------------------------------------------
+    - name: "TEST 101 - Session is mandatory"
+      aos_blueprint:
+        name: "my-blueprint"
+        state: present
+      register: test
+      ignore_errors: True
+      tags: [ negative, param ]
+
+    - name: Check TEST 101
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('missing required arguments') != -1"
+      tags: [ negative, param ]
+#-------------------------------------------------------
+    - name: "TEST 102 - Name and ID are mutually exclusive"
+      aos_blueprint:
+        session: "{{ session_ok }}"
+        name: "myName"
+        id: "myID"
+        state: present
+      register: test
+      ignore_errors: True
+      tags: [ negative, param ]
+
+    - name: Check TEST 102
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('parameters are mutually exclusive') != -1"
+      tags: [ negative, param ]
+#-------------------------------------------------------
+    - name: "TEST 103 - Session is a dict"
+      aos_blueprint:
+        session: "my-session"
+        name: "my-blueprint"
+        state: present
+      register: test
+      ignore_errors: True
+      tags: [ negative, param ]
+
+    - name: Check TEST 103
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('argument session is of type') != -1"
+      tags: [ negative, param ]
+#-------------------------------------------------------
+    - name: "TEST 104 - Session is not valid"
+      aos_blueprint:
+        session: "{{ session_wrong_token }}"
+        name: "my-blueprint"
+        state: present
+      register: test
+      ignore_errors: True
+      tags: [ negative, param ]
+
+    - debug: var=test
+    - name: Check TEST 104
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('Unable to login to the AOS server') != -1"
+      tags: [ negative, param ]
+#-------------------------------------------------------
+# TESTS 200 - Valid Inputs
+#-------------------------------------------------------
+
+    - name: "SETUP 200 - Cleanup existing server"
+      aos_blueprint:
+        session: "{{ session_ok }}"
+        name: "my-blueprint"
+        state: absent
+      register: test
+      ignore_errors: True
+      tags: [ input ]
+
+    - name: Check TEST 200
+      assert:
+        that:
+          - test|success
+      tags: [ json ]
+#-------------------------------------------------------
+    - name: "SETUP 201 - Create Blueprint, check mode 1/2"
+      aos_blueprint:
+        session: "{{ session_ok }}"
+        name: "my-blueprint"
+        template: "vPOD-L2"
+        reference_arch: "two_stage_l3clos"
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ input ]
+
+    - name: Check TEST 201
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: "SETUP 202 - Create Blueprint, check mode 2/2"
+      aos_blueprint:
+        session: "{{ session_ok }}"
+        name: "my-blueprint"
+        template: "vPOD-L2"
+        reference_arch: "two_stage_l3clos"
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ input ]
+
+    - name: Check TEST 202
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: "SETUP 203 - Create Blueprint "
+      aos_blueprint:
+        session: "{{ session_ok }}"
+        name: "my-blueprint"
+        template: "vPOD-L2"
+        reference_arch: "two_stage_l3clos"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    - name: Check TEST 203
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: "SETUP 204 - Create Blueprint when exist"
+      aos_blueprint:
+        session: "{{ session_ok }}"
+        name: "my-blueprint"
+        template: "vPOD-L2"
+        reference_arch: "two_stage_l3clos"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    - name: Check TEST 204
+      assert:
+        that:
+          - test|success
+          - not test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: "SETUP 205 - Delete Blueprint, check mode 1/2"
+      aos_blueprint:
+        session: "{{ session_ok }}"
+        name: "my-blueprint"
+        template: "vPOD-L2"
+        reference_arch: "two_stage_l3clos"
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ input ]
+
+    - name: Check TEST 205
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: "SETUP 206 - Delete Blueprint, check mode 2/2"
+      aos_blueprint:
+        session: "{{ session_ok }}"
+        name: "my-blueprint"
+        template: "vPOD-L2"
+        reference_arch: "two_stage_l3clos"
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ input ]
+
+    - name: Check TEST 206
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: "SETUP 207 - Delete Blueprint"
+      aos_blueprint:
+        session: "{{ session_ok }}"
+        name: "my-blueprint"
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    - name: Check TEST 207
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: "SETUP 208 - Delete Blueprint with exist"
+      aos_blueprint:
+        session: "{{ session_ok }}"
+        name: "my-blueprint"
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    - name: Check TEST 208
+      assert:
+        that:
+          - test|success
+          - not test|changed
+      tags: [ input ]
+#-------------------------------------------------------

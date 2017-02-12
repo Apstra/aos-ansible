@@ -13,8 +13,7 @@ install:
 ## Create Docker with Ansible from devel and all dependencies
   - make build
   - docker pull juniper/ravello-ansible:v0.1
-
-  - cd tests`
+  - cd tests
 
 script:
 ## Start Virtual topology on Ravello with 1 AOS Server and collect IP addresses

@@ -12,7 +12,7 @@
 
 ---
 - name: Test aos_ip_pool module
-  hosts: aos-server
+  hosts: all
   connection: local
   gather_facts: no
   vars:
@@ -38,6 +38,7 @@
             "password": "{{password}}"
           }
         body_format: json
+        timeout: 60
       register: session
       tags: [ yaml, json, var, input ]
 

@@ -1,0 +1,8 @@
+ravello_ci:
+  aos_version:
+    "1.1":
+      blueprint: 78709495
+      token: WWcsYxdcmxuv5pedRa4hRtE8AFsYOMLVIA4cZn2f64b6QBUfvBhN4pPL3FVkD9pG
+    "1.0":
+      blueprint: 78709497
+      token: 97V09ML3nNDleL4s466Za8UR5Ub5VHMMmjFOshstKm2Khil6hg4ar2zwJoSRnkVW

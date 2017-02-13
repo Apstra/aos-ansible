@@ -6,6 +6,9 @@ python:
 # dist: trusty
 sudo: false
 
+services:
+  - docker
+
 env:
   - AOS_VERSION=1.1
 #  - AOS_VERSION=1.0

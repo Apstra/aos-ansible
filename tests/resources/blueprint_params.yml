@@ -1,18 +1,21 @@
 ---
 
 
-blueprint_params:
+blueprint_params_dhcp:
     dhcp_server_ip:
         value: 192.168.59.254
 
+blueprint_params_ext_link:
     external_links:
         router0: router-A
         router1: router-A
 
+blueprint_params_ext_link_ips:
     to_external_router_link_ips:
         spine_1<->router0: 1.1.1.0/31
         spine_2<->router1: 1.2.1.0/31
 
+blueprint_params_resource:
     resource_pools:
         leaf_loopback_ips: ['Switches-IpAddrs']
         spine_loopback_ips: ['Switches-IpAddrs']
@@ -21,6 +24,7 @@ blueprint_params:
         leaf_asns: ['Private-ASN-pool']
         virtual_network_svi_subnets: ['Servers-IpAddrs']
 
+blueprint_params_device_map:
     logical_device_maps:
         spine_1: CumulusVX-Spine-Switch
         spine_2: CumulusVX-Spine-Switch
@@ -28,6 +32,7 @@ blueprint_params:
         leaf_2: CumulusVX-Leaf-Switch
         leaf_3: CumulusVX-Leaf-Switch
 
+## -
 blueprint_params_maps:
     logical_device_maps: LogicalDeviceMaps
 

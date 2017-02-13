@@ -11,6 +11,7 @@
       token: "WRONGTOKEN"
   pre_tasks:
     - include_vars: "resources/blueprint_params.yml"
+      tags: [ always ]
 
   tasks:
 #-------------------------------------------------------
@@ -30,6 +31,7 @@
           }
         body_format: json
       register: session
+      tags: [ always ]
 
     - name: Format token into session_ok variable
       set_fact:
@@ -37,6 +39,7 @@
           server: "{{address}}"
           port: "{{port}}"
           token: "{{session.json.token}}"
+      tags: [ always ]
 
 #-------------------------------------------------------
 # TESTS 100 - Wrong Inputs
@@ -98,8 +101,6 @@
 #-------------------------------------------------------
 # TESTS 200 - Valid Inputs
 #-------------------------------------------------------
-
-
     - name: TEST 200 - Get list of available parameters
       aos_blueprint_param:
         session: "{{session_ok}}"
@@ -107,186 +108,478 @@
         get_param_list: true
       register: test
       ignore_errors: True
+      tags: [ list ]
 
-    - debug: var=test
+    # - debug: var=test
+    #   tags: [ list ]
 
     - name: Check TEST 200
       assert:
         that:
           - test|success
           - not test|changed
-          - test|params_list
+          - test.params_list
+      tags: [ list ]
 
-    # - name: Configuring blueprint parameters
-    #   aos_blueprint_param:
-    #     session: "{{session_ok}}"
-    #     blueprint: "my-blueprint-l2"
-    #     name: "{{ item.key }}"
-    #     value: "{{ item.value }}"
-    #     param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
-    #   with_dict: "{{blueprint_params}}"
+#-------------------------------------------------------
+    - name: INIT 201 - Delete Existing Blueprint parameter
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+        state: absent
+      with_dict: "{{blueprint_params_dhcp}}"
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
 
-        #
-#     - name: "SETUP 200 - Cleanup existing server"
-#       aos_blueprint_param:
-#         session: "{{ session_ok }}"
-#         name: "my-blueprint"
-#         state: absent
-#       register: test
-#       ignore_errors: True
-#       tags: [ input ]
-#
-#     - name: Check TEST 200
-#       assert:
-#         that:
-#           - test|success
-#       tags: [ json ]
-# #-------------------------------------------------------
-#     - name: "SETUP 201 - Create Blueprint, check mode 1/2"
-#       aos_blueprint_param:
-#         session: "{{ session_ok }}"
-#         name: "my-blueprint"
-#         template: "my-servers"
-#         reference_arch: "two_stage_l3clos"
-#         state: present
-#       register: test
-#       check_mode: yes
-#       ignore_errors: True
-#       tags: [ input ]
-#
-#     - name: Check TEST 201
-#       assert:
-#         that:
-#           - test|success
-#           - test|changed
-#       tags: [ input ]
-# #-------------------------------------------------------
-#     - name: "SETUP 202 - Create Blueprint, check mode 2/2"
-#       aos_blueprint_param:
-#         session: "{{ session_ok }}"
-#         name: "my-blueprint"
-#         template: "my-servers"
-#         reference_arch: "two_stage_l3clos"
-#         state: present
-#       register: test
-#       check_mode: yes
-#       ignore_errors: True
-#       tags: [ input ]
-#
-#     - name: Check TEST 202
-#       assert:
-#         that:
-#           - test|success
-#           - test|changed
-#       tags: [ input ]
-# #-------------------------------------------------------
-#     - name: "SETUP 203 - Create Blueprint "
-#       aos_blueprint_param:
-#         session: "{{ session_ok }}"
-#         name: "my-blueprint"
-#         template: "my-servers"
-#         reference_arch: "two_stage_l3clos"
-#         state: present
-#       register: test
-#       check_mode: no
-#       ignore_errors: True
-#       tags: [ input ]
-#
-#     - name: Check TEST 203
-#       assert:
-#         that:
-#           - test|success
-#           - test|changed
-#       tags: [ input ]
-# #-------------------------------------------------------
-#     - name: "SETUP 204 - Create Blueprint when exist"
-#       aos_blueprint_param:
-#         session: "{{ session_ok }}"
-#         name: "my-blueprint"
-#         template: "my-servers"
-#         reference_arch: "two_stage_l3clos"
-#         state: present
-#       register: test
-#       check_mode: no
-#       ignore_errors: True
-#       tags: [ input ]
-#
-#     - name: Check TEST 204
-#       assert:
-#         that:
-#           - test|success
-#           - not test|changed
-#       tags: [ input ]
-# #-------------------------------------------------------
-#     - name: "SETUP 205 - Delete Blueprint, check mode 1/2"
-#       aos_blueprint_param:
-#         session: "{{ session_ok }}"
-#         name: "my-blueprint"
-#         template: "my-servers"
-#         reference_arch: "two_stage_l3clos"
-#         state: absent
-#       register: test
-#       check_mode: yes
-#       ignore_errors: True
-#       tags: [ input ]
-#
-#     - name: Check TEST 205
-#       assert:
-#         that:
-#           - test|success
-#           - test|changed
-#       tags: [ input ]
-# #-------------------------------------------------------
-#     - name: "SETUP 206 - Delete Blueprint, check mode 2/2"
-#       aos_blueprint_param:
-#         session: "{{ session_ok }}"
-#         name: "my-blueprint"
-#         template: "my-servers"
-#         reference_arch: "two_stage_l3clos"
-#         state: absent
-#       register: test
-#       check_mode: yes
-#       ignore_errors: True
-#       tags: [ input ]
-#
-#     - name: Check TEST 206
-#       assert:
-#         that:
-#           - test|success
-#           - test|changed
-#       tags: [ input ]
-# #-------------------------------------------------------
-#     - name: "SETUP 207 - Delete Blueprint"
-#       aos_blueprint_param:
-#         session: "{{ session_ok }}"
-#         name: "my-blueprint"
-#         state: absent
-#       register: test
-#       check_mode: no
-#       ignore_errors: True
-#       tags: [ input ]
-#
-#     - name: Check TEST 207
-#       assert:
-#         that:
-#           - test|success
-#           - test|changed
-#       tags: [ input ]
-# #-------------------------------------------------------
-#     - name: "SETUP 208 - Delete Blueprint with exist"
-#       aos_blueprint_param:
-#         session: "{{ session_ok }}"
-#         name: "my-blueprint"
-#         state: absent
-#       register: test
-#       check_mode: no
-#       ignore_errors: True
-#       tags: [ input ]
-#
-#     - name: Check TEST 208
-#       assert:
-#         that:
-#           - test|success
-#           - not test|changed
-#       tags: [ input ]
-# #-------------------------------------------------------
+    - name: Check INIT 201
+      assert:
+        that:
+          - test|success
+      tags: [ input ]
+
+#-------------------------------------------------------
+    - name: TEST 201 - Add Blueprint parameter (dhcp), check mode 1/2
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+      with_dict: "{{blueprint_params_dhcp}}"
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+
+    - name: Check TEST 201
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 202 - Add Blueprint parameter (dhcp), check mode 2/2
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+      with_dict: "{{blueprint_params_dhcp}}"
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+
+    - name: Check TEST 202
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 203 - Add Blueprint parameter (dhcp)
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+      with_dict: "{{blueprint_params_dhcp}}"
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+    - name: Check TEST 203
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 204 - Add Blueprint parameter (dhcp)
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+      with_dict: "{{blueprint_params_dhcp}}"
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+
+    - name: Check TEST 204
+      assert:
+        that:
+          - test|success
+          - not test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: INIT 211 - Delete Existing Blueprint parameter
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+        state: absent
+      with_dict: "{{blueprint_params_device_map}}"
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    - name: Check INIT 211
+      assert:
+        that:
+          - test|success
+      tags: [ input ]
+
+#-------------------------------------------------------
+    - name: TEST 211 - Add Blueprint parameter (device_map), check mode 1/2
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+      with_dict: "{{blueprint_params_device_map}}"
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+
+    - name: Check TEST 211
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 212 - Add Blueprint parameter (device_map), check mode 2/2
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+      with_dict: "{{blueprint_params_device_map}}"
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+
+    - name: Check TEST 212
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 213 - Add Blueprint parameter (device_map)
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+      with_dict: "{{blueprint_params_device_map}}"
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+    - name: Check TEST 213
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 214 - Add Blueprint parameter (device_map)
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+      with_dict: "{{blueprint_params_device_map}}"
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+
+    - name: Check TEST 214
+      assert:
+        that:
+          - test|success
+          - not test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 215 - Add Blueprint parameter (device_map), no param_map
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        # param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+      with_dict: "{{blueprint_params_device_map}}"
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+
+    - name: Check TEST 215
+      assert:
+        that:
+          - test|success
+          - not test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 216 - Add Blueprint parameter (device_map), direct
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "logical_device_maps"
+        value:
+          spine_1: CumulusVX-Spine-Switch
+          spine_2: CumulusVX-Spine-Switch
+          leaf_1: CumulusVX-Leaf-Switch
+          leaf_2: CumulusVX-Leaf-Switch
+          leaf_3: CumulusVX-Leaf-Switch
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+
+    - name: Check TEST 216
+      assert:
+        that:
+          - test|success
+          - not test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 217 - Get Blueprint parameter (device_map)
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "logical_device_maps"
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    - debug: var=test
+      tags: [ input ]
+
+    - name: Check TEST 217
+      assert:
+        that:
+          - test|success
+          - not test|changed
+          - test.blueprint
+          - test.value
+
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: INIT 221 - Delete Existing Blueprint parameter
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+        state: absent
+      with_dict: "{{blueprint_params_resource}}"
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    - name: Check INIT 221
+      assert:
+        that:
+          - test|success
+      tags: [ input ]
+
+#-------------------------------------------------------
+    - name: TEST 221 - Add Blueprint parameter (resource_pools), check mode 1/2
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+      with_dict: "{{blueprint_params_resource}}"
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+
+    - name: Check TEST 221
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 222 - Add Blueprint parameter (resource_pools), check mode 2/2
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+      with_dict: "{{blueprint_params_resource}}"
+      register: test
+      check_mode: yes
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+
+    - name: Check TEST 222
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 223 - Add Blueprint parameter (resource_pools)
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+      with_dict: "{{blueprint_params_resource}}"
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+    - name: Check TEST 223
+      assert:
+        that:
+          - test|success
+          - test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 224 - Add Blueprint parameter (resource_pools)
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+        param_map: "{{ blueprint_params_maps.get(item.key) | to_json }}"
+      with_dict: "{{blueprint_params_resource}}"
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+
+    - name: Check TEST 224
+      assert:
+        that:
+          - test|success
+          - not test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 225 - Add Blueprint parameter (resource_pools), no param_map
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "{{ item.key }}"
+        value: "{{ item.value }}"
+      with_dict: "{{blueprint_params_resource}}"
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    # - debug: var=test
+    #   tags: [ input ]
+
+    - name: Check TEST 225
+      assert:
+        that:
+          - test|success
+          - not test|changed
+      tags: [ input ]
+#-------------------------------------------------------
+    - name: TEST 226 - Add Blueprint parameter (resource_pools), by provided a param_map inline
+      aos_blueprint_param:
+        session: "{{session_ok}}"
+        blueprint: "my-blueprint-l2"
+        name: "resource_pools"
+        value:
+          leaf_loopback_ips: ['Switches-IpAddrs']
+          spine_loopback_ips: ['Switches-IpAddrs']
+          spine_leaf_link_ips: ['Switches-IpAddrs']
+          spine_asns: ['Private-ASN-pool']
+          leaf_asns: ['Private-ASN-pool']
+          virtual_network_svi_subnets: ['Servers-IpAddrs']
+        param_map:
+          leaf_loopback_ips: IpPools
+          spine_loopback_ips: IpPools
+          spine_leaf_link_ips: IpPools
+          spine_asns: AsnPools
+          leaf_asns: AsnPools
+          virtual_network_svi_subnets: IpPools
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+      tags: [ input ]
+
+    - name: Check TEST 226
+      assert:
+        that:
+          - test|success
+          - not test|changed
+      tags: [ input ]

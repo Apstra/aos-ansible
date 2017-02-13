@@ -1,0 +1,460 @@
+
+---
+- name: Test aos_rack_type module
+  hosts: aos-server
+  connection: local
+  gather_facts: no
+  vars:
+    session_wrong_token:
+      server: "{{address}}"
+      port: "{{port}}"
+      token: "WRONGTOKEN"
+
+  tasks:
+#-------------------------------------------------------
+# TESTS 000 - Open Session
+#-------------------------------------------------------
+    - name: Open Session on AOS Server
+      uri:
+        url: "http://{{address}}:{{port}}/api/user/login"
+        method: POST
+        status_code: 201
+        HEADER_Content-Type: 'application/json'
+        HEADER_Accept: 'application/json'
+        body: >
+          {
+            "username": "{{username}}",
+            "password": "{{password}}"
+          }
+        body_format: json
+      register: session
+
+    - name: Format token into session_ok variable
+      set_fact:
+        session_ok:
+          server: "{{address}}"
+          port: "{{port}}"
+          token: "{{session.json.token}}"
+
+#-------------------------------------------------------
+# TESTS 100 - Wrong Inputs
+#-------------------------------------------------------
+    - name: "TEST 101 - Session is mandatory"
+      aos_rack_type:
+        name: "my-rack-type"
+        state: present
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+    - name: Check TEST 101
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('missing required arguments') != -1"
+#-------------------------------------------------------
+    - name: "TEST 102 - Name and ID are mutually exclusive"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        name: "myName"
+        id: "myID"
+        state: present
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test102
+    - name: Check TEST 102
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('parameters are mutually exclusive') != -1"
+#-------------------------------------------------------
+    - name: "TEST 103 - Session is a dict"
+      aos_rack_type:
+        session: "my-session"
+        name: "my-rack-type"
+        state: present
+      register: test
+      ignore_errors: True
+
+    # - debug: var=test
+    - name: Check TEST 103
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('argument session is of type') != -1"
+#-------------------------------------------------------
+
+    - name: "TEST 104 - Session is not valid"
+      aos_rack_type:
+        session: "{{ session_wrong_token }}"
+        name: "my-rack-type"
+        state: present
+      register: test
+      ignore_errors: True
+
+    - debug: var=test
+    - name: Check TEST 104
+      assert:
+        that:
+          - test|failed
+          - "test.msg.find('Unable to login to the AOS server') != -1"
+
+#-------------------------------------------------------
+# TESTS 200 - Valid Inputs
+#-------------------------------------------------------
+
+    - name: "SETUP 200 - Cleanup existing server"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        name: "my-rack-type"
+        state: absent
+      register: test
+      ignore_errors: True
+
+    - name: Check TEST 200
+      assert:
+        that:
+          - test|success
+
+#-------------------------------------------------------
+    - name: "TEST 201 - Create Rack Type - Check mode 1/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_01.json') }}"
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 201
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 202 - Create Rack Type - Check mode 2/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_01.json') }}"
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 202
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 203 - Create Rack Type - 1/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_01.json') }}"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 203
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 204 - Create Rack Type - 2/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_01.json') }}"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 204
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 205 - Create Rack Type - Check mode when exist"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        name: "my-rack-type"
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 205
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 206.1 - Delete Rack Type - Check mode when exist"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_01.json') }}"
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 206.1
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 206.2 - Delete Rack Type - Check mode when exist"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        name: "my-rack-type"
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 206.2
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 207 - Delete Rack Type - 1/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        name: "my-rack-type"
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 207
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 208 - Delete Rack Type - 2/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        name: "my-rack-type"
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 208
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 209 - Delete Rack Type - Check mode when absent"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        name: "my-rack-type"
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 209
+      assert:
+        that:
+          - test|success
+          - not test|changed
+#-------------------------------------------------------
+    - name: "INIT 210 - Create Rack Type"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_01.json') }}"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 210
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 210 - Save Rack Type into a file "
+      copy:
+        content: "{{ test.value | to_nice_json }}"
+        dest: resources/rack_type_saved.json
+
+    - name: Check TEST 210
+      assert:
+        that:
+          - test|success
+          # - not test|changed
+
+#-------------------------------------------------------
+    - name: "INIT 211 - Delete Rack Type"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        name: "my-rack-type"
+        state: absent
+      register: test
+      ignore_errors: True
+
+    - name: Check Init TEST 211
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 211 - Load Rack Type from file, Check Mode 1/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_saved.json') }}"
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 211
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 212 - Load Rack Type from file, Check Mode 2/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_saved.json') }}"
+        state: present
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 212
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 213 - Load Rack Type from file, 1/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_saved.json') }}"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 213
+      assert:
+        that:
+          - test|success
+          - test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 214 - Load Rack Type from file, 2/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_saved.json') }}"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check TEST 214
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 215 - Delete Rack Type from File, Check Mode 1/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_saved.json') }}"
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check TEST 215
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 216 - Delete Rack Type from File, Check Mode 2/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_saved.json') }}"
+        state: absent
+      register: test
+      check_mode: yes
+      ignore_errors: True
+
+    - name: Check Init TEST 216
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 217 - Delete Rack Type from File, 1/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_saved.json') }}"
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check Init TEST 217
+      assert:
+        that:
+          - test|success
+          - test|changed
+#-------------------------------------------------------
+    - name: "TEST 218 - Delete Rack Type from File, 2/2"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_saved.json') }}"
+        state: absent
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check Init TEST 218
+      assert:
+        that:
+          - test|success
+          - not test|changed
+
+#-------------------------------------------------------
+    - name: "TEST 220 - Create Rack Type from File"
+      aos_rack_type:
+        session: "{{ session_ok }}"
+        content: "{{ lookup('file', 'resources/rack_type_saved.json') }}"
+        state: present
+      register: test
+      check_mode: no
+      ignore_errors: True
+
+    - name: Check Init TEST 220
+      assert:
+        that:
+          - test|success
+          - test|changed

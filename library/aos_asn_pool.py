@@ -30,9 +30,9 @@ author: Ryan Booth (@that1guy15)
 version_added: "2.7"
 short_description: Manage AOS ASN Pool
 description:
-  - Apstra AOS ASN Pool module lets you manage your ASN Pool easily. You can
-    create and delete ASN Pools by Name, ID or by using a JSON File. This
-    module is idempotent and supports the I(check) mode.
+  - Apstra AOS ASN Pool module lets you manage your ASN Pool easily. You can 
+    create and delete ASN Pools by Name, ID or by using a JSON File. This 
+    module is idempotent and supports the I(check) mode. 
     It's using the AOS REST API.
 options:
   session:
@@ -47,14 +47,19 @@ options:
     description:
       - AOS Id of the ASN Pool to manage.
         Only one of I(name), I(id) or I(content) can be set.
+  content:
+    description:
+      - Datastructure of the ASN Pool to manage. The data can be in YAML / JSON or
+        directly a variable. It's the same datastructure that is returned
+        on success in I(value).
   state:
     description:
-      - Indicates the expected state of the ASN Pool (present or absent).
+      - Indicate what is the expected state of the ASN Pool (present or not).
     default: present
     choices: ['present', 'absent']
   ranges:
     description:
-      - List of ASNs ranges to add to the ASN Pool. Each range (list) must have
+      - List of ASNs ranges to add to the ASN Pool. Each range (list) must have 
         2 values. A start of range and an end of range.
 '''
 

@@ -149,7 +149,7 @@ import json
 import time
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.aos import get_aos_session, find_collection_item, do_load_resource, check_aos_version, content_to_dict
+from ansible.module_utils.aos import get_aos_session, find_collection_item, do_load_resource, content_to_dict
 
 
 def create_new_ext_router(module, my_ext_router, name, loopback, asn):
@@ -322,9 +322,6 @@ def main():
         required_one_of=[('name', 'id', 'content')],
         supports_check_mode=True
     )
-
-    # Check if aos-pyez is present and match the minimum version
-    check_aos_version(module, '0.6.0')
 
     ext_router(module)
 

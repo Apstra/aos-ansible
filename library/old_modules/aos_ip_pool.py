@@ -165,7 +165,7 @@ value:
 import json
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.aos import get_aos_session, find_collection_item, do_load_resource, check_aos_version, content_to_dict
+from ansible.module_utils.aos import get_aos_session, find_collection_item, do_load_resource, content_to_dict
 
 def get_list_of_subnets(ip_pool):
     subnets = []
@@ -330,9 +330,6 @@ def main():
         required_one_of=[('name', 'id', 'content')],
         supports_check_mode=True
     )
-
-    # Check if aos-pyez is present and match the minimum version
-    check_aos_version(module, '0.6.0')
 
     ip_pool(module)
 

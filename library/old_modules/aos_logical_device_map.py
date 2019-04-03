@@ -25,13 +25,13 @@ ANSIBLE_METADATA = {'metadata_version': '1.0',
 
 DOCUMENTATION = '''
 ---
-module: aos_template
+module: aos_logical_device_map
 author: Damien Garros (@dgarros)
 version_added: "2.3"
-short_description: Manage AOS Template
+short_description: Manage AOS Logical Device Map
 description:
-  - Apstra AOS Template module let you manage your Template easily. You can create
-    create and delete Template by Name, ID or by using a JSON File. This module
+  - Apstra AOS Logical Device Map module let you manage your Logical Device Map easily. You can create
+    create and delete Logical Device Map by Name, ID or by using a JSON File. This module
     is idempotent and support the I(check) mode. It's using the AOS REST API.
 requirements:
   - "aos-pyez >= 0.6.0"
@@ -42,87 +42,98 @@ options:
     required: true
   name:
     description:
-      - Name of the Template to manage.
-        Only one of I(name), I(id) or I(src) can be set.
+      - Name of the Logical Device Map to manage.
+        Only one of I(name), I(id) or I(content) can be set.
   id:
     description:
-      - AOS Id of the Template to manage (can't be used to create a new Template),
-        Only one of I(name), I(id) or I(src) can be set.
+      - AOS Id of the Logical Device Map to manage (can't be used to create a new Logical Device Map),
+        Only one of I(name), I(id) or I(content) can be set.
   content:
     description:
-      - Datastructure of the Template to create. The data can be in YAML / JSON or
+      - Datastructure of the Logical Device Map to manage. The data can be in YAML / JSON or
         directly a variable. It's the same datastructure that is returned
-        on success in I(value).
+        on success in I(value). Only one of I(name), I(id) or I(content) can be set.
   state:
     description:
-      - Indicate what is the expected state of the Template (present or not).
+      - Indicate what is the expected state of the Logical Device Map (present or not).
     default: present
     choices: ['present', 'absent']
 '''
 
 EXAMPLES = '''
 
-- name: "Check if an Template exist by name"
-  aos_template:
+- name: "Create an Logical Device Map with one subnet"
+  aos_logical_device_map:
     session: "{{ aos_session }}"
-    name: "my-template"
+    name: "my-logical-device-map"
     state: present
 
-- name: "Check if an Template exist by ID"
-  aos_template:
+- name: "Create an Logical Device Map with multiple subnets"
+  aos_logical_device_map:
     session: "{{ aos_session }}"
-    id: "45ab26fc-c2ed-4307-b330-0870488fa13e"
+    name: "my-other-logical-device-map"
     state: present
 
-- name: "Delete an Template by name"
-  aos_template:
+- name: "Check if an Logical Device Map exist with same subnets by ID"
+  aos_logical_device_map:
     session: "{{ aos_session }}"
-    name: "my-template"
+    name: "45ab26fc-c2ed-4307-b330-0870488fa13e"
+    state: present
+
+- name: "Delete an Logical Device Map by name"
+  aos_logical_device_map:
+    session: "{{ aos_session }}"
+    name: "my-logical-device-map"
     state: absent
 
-- name: "Delete an Template by id"
-  aos_template:
+- name: "Delete an Logical Device Map by id"
+  aos_logical_device_map:
     session: "{{ aos_session }}"
     id: "45ab26fc-c2ed-4307-b330-0870488fa13e"
     state: absent
 
-- name: "Access Template 1/3"
-  aos_template:
-    session: "{{ aos_session }}"
-    name: "my-template"
-    state: present
-  register: template
-- name: "Save Template into a JSON file 2/3"
-  copy:
-    content: "{{ template.value | to_nice_json }}"
-    dest: template_saved.json
-- name: "Save Template into a YAML file 2/3"
-  copy:
-    content: "{{ template.value | to_nice_yaml }}"
-    dest: template_saved.yaml
+# Save an Logical Device Map to a file
 
-- name: "Load Template from File (Json)"
-  aos_template:
+- name: "Access Logical Device Map 1/3"
+  aos_logical_device_map:
     session: "{{ aos_session }}"
-    content: "{{ lookup('file', 'resources/template_saved.json') }}"
+    name: "my-logical-device-map"
+    state: present
+  register: logical_device_map
+
+- name: "Save Logical Device Map into a file in JSON 2/3"
+  copy:
+    content: "{{ logical_device_map.value | to_nice_json }}"
+    dest: logical_device_map_saved.json
+
+- name: "Save Logical Device Map into a file in YAML 3/3"
+  copy:
+    content: "{{ logical_device_map.value | to_nice_yaml }}"
+    dest: logical_device_map_saved.yaml
+
+- name: "Load Logical Device Map from a JSON file"
+  aos_logical_device_map:
+    session: "{{ aos_session }}"
+    content: "{{ lookup('file', 'resources/logical_device_map_saved.json') }}"
     state: present
 
-- name: "Load Template from File (yaml)"
-  aos_template:
+- name: "Load Logical Device Map from a YAML file"
+  aos_logical_device_map:
     session: "{{ aos_session }}"
-    content: "{{ lookup('file', 'resources/template_saved.yaml') }}"
+    content: "{{ lookup('file', 'resources/logical_device_map_saved.yaml') }}"
     state: present
+
 '''
 
 RETURNS = '''
 name:
-  description: Name of the Template
+  description: Name of the Logical Device Map
   returned: always
   type: str
-  sample: My-Template
+  sample: Server-IpAddrs
 
 id:
-  description: AOS unique ID assigned to the Template
+  description: AOS unique ID assigned to the Logical Device Map
   returned: always
   type: str
   sample: fcc4ac1c-e249-4fe7-b458-2138bfb44c06
@@ -134,68 +145,64 @@ value:
   sample: {'...'}
 '''
 
-import time
 import json
+import time
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.aos import get_aos_session, find_collection_item, do_load_resource, check_aos_version, content_to_dict
+from ansible.module_utils.aos import get_aos_session, find_collection_item, do_load_resource, content_to_dict
 
 #########################################################
 # State Processing
 #########################################################
-def template_absent(module, aos, my_template):
+def logical_device_map_absent(module, aos, my_log_dev_map):
 
     margs = module.params
 
     # If the module do not exist, return directly
-    if my_template.exists is False:
-        module.exit_json(changed=False,
-                         name=margs['name'],
-                         id=margs['id'],
-                         value={})
+    if my_log_dev_map.exists is False:
+        module.exit_json(changed=False, name=margs['name'], id='', value={})
 
-    # If not in check mode, delete Template
+    # If not in check mode, delete Logical Device Map
     if not module.check_mode:
         try:
-            # need to way 1sec before delete to workaround a current limitation in AOS
+            # Need to wait for 1sec before a delete to workaround a current
+            # limitation in AOS
             time.sleep(1)
-            my_template.delete()
+            my_log_dev_map.delete()
         except:
-            module.fail_json(msg="An error occurred, while trying to delete the Template")
+            module.fail_json(msg="An error occurred, while trying to delete the Logical Device Map")
 
     module.exit_json( changed=True,
-                      name=my_template.name,
-                      id=my_template.id,
+                      name=my_log_dev_map.name,
+                      id=my_log_dev_map.id,
                       value={} )
 
-def template_present(module, aos, my_template):
+def logical_device_map_present(module, aos, my_log_dev_map):
 
     margs = module.params
 
     # if content is defined, create object from Content
-
     if margs['content'] is not None:
 
         if 'display_name' in module.params['content'].keys():
-            do_load_resource(module, aos.DesignTemplates, module.params['content']['display_name'])
+            do_load_resource(module, aos.LogicalDeviceMaps, module.params['content']['display_name'])
         else:
             module.fail_json(msg="Unable to find display_name in 'content', Mandatory")
 
-    # if template doesn't exist already, create a new one
-    if my_template.exists is False and 'content' not in margs.keys():
-        module.fail_json(msg="'content' is mandatory for module that don't exist currently")
+    # if my_log_dev_map doesn't exist already, create a new one
 
-    # if module already exist, just return it
+    if my_log_dev_map.exists is False and 'content' not in margs.keys():
+        module.fail_json(msg="'Content' is mandatory for module that don't exist currently")
+
     module.exit_json( changed=False,
-                      name=my_template.name,
-                      id=my_template.id,
-                      value=my_template.value )
-
+                      name=my_log_dev_map.name,
+                      id=my_log_dev_map.id,
+                      value=my_log_dev_map.value )
 
 #########################################################
 # Main Function
 #########################################################
-def aos_template(module):
+def logical_device_map(module):
 
     margs = module.params
 
@@ -226,22 +233,22 @@ def aos_template(module):
     # Find Object if available based on ID or Name
     #----------------------------------------------------
     try:
-        my_template = find_collection_item(aos.DesignTemplates,
-                            item_name=item_name,
-                            item_id=item_id)
+        my_log_dev_map = find_collection_item(aos.LogicalDeviceMaps,
+                                                item_name=item_name,
+                                                item_id=item_id)
     except:
-        module.fail_json(msg="Unable to find the IP Pool based on name or ID, something went wrong")
+        module.fail_json(msg="Unable to find the Logical Device Map based on name or ID, something went wrong")
 
     #----------------------------------------------------
     # Proceed based on State value
     #----------------------------------------------------
     if margs['state'] == 'absent':
 
-        template_absent(module, aos, my_template)
+        logical_device_map_absent(module, aos, my_log_dev_map)
 
     elif margs['state'] == 'present':
 
-        template_present(module, aos, my_template)
+        logical_device_map_present(module, aos, my_log_dev_map)
 
 def main():
     module = AnsibleModule(
@@ -259,10 +266,7 @@ def main():
         supports_check_mode=True
     )
 
-    # Check if aos-pyez is present and match the minimum version
-    check_aos_version(module, '0.6.0')
-
-    aos_template(module)
+    logical_device_map(module)
 
 if __name__ == "__main__":
     main()

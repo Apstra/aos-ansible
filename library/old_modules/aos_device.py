@@ -101,7 +101,7 @@ value:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.aos import get_aos_session, check_aos_version, find_collection_item
+from ansible.module_utils.aos import get_aos_session, find_collection_item
 
 def aos_device_normal(module, aos, dev):
 
@@ -201,9 +201,6 @@ def main():
         required_one_of=[('name', 'id')],
         supports_check_mode=True
     )
-
-    # Check if aos-pyez is present and match the minimum version
-    check_aos_version(module, '0.6.0')
 
     aos_device(module)
 

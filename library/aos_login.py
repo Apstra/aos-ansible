@@ -26,8 +26,8 @@ ANSIBLE_METADATA = {'metadata_version': '1.0',
 DOCUMENTATION = '''
 ---
 module: aos_login
-author: jeremy@apstra.com (@jeremyschulman)
-version_added: "2.3"
+author: ryan@apstra.com (@that1guy15)
+version_added: "2.7"
 short_description: Login to AOS server for session token
 description:
   - Obtain the AOS server session token by providing the required
@@ -36,8 +36,6 @@ description:
     subsequent AOS module usage. On success the module will automatically populate
     ansible facts with the variable I(aos_session)
     This module is not idempotent and do not support check mode.
-requirements:
-  - "aos-pyez >= 0.6.1"
 options:
   server:
     description:
@@ -76,40 +74,53 @@ RETURNS = '''
 aos_session:
   description: Authenticated session information
   returned: always
-  type: dict
-  sample: { 'url': <str>, 'headers': {...} }
+  type: string
+  sample: "eyJhbUdm45OiJIUzI1Ni3asvdsInR5cCI6IkpXVCJ9.eyJ1c2V..."
 '''
 
-from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.aos import check_aos_version
+import requests
+import urllib3
+from ansible.module_utils.basic import *
 
-try:
-    from apstra.aosom.session import Session
-    import apstra.aosom.exc as aosExc
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-    HAS_AOS_PYEZ = True
-except ImportError:
-    HAS_AOS_PYEZ = False
+MAX_ATTEMPTS = 3
+
 
 def aos_login(module):
 
     mod_args = module.params
 
-    aos = Session(server=mod_args['server'], port=mod_args['port'],
-                  user=mod_args['user'], passwd=mod_args['passwd'])
+    aos_url = "https://{}/api/user/login".format(mod_args['server'])
 
-    try:
-        aos.login()
-    except aosExc.LoginServerUnreachableError:
-        module.fail_json(
-            msg="AOS-server [%s] API not available/reachable, check server" % aos.server)
+    aos_session = {}
+    headers = {'Accept': "application/json",
+               'Content-Type': "application/json",
+               'cache-control': "no-cache"}
+    payload = {"username": mod_args['user'],
+               "password": mod_args['passwd']}
 
-    except aosExc.LoginAuthError:
-        module.fail_json(msg="AOS-server login credentials failed")
+    for attempt in range(MAX_ATTEMPTS):
+        try:
+            response = requests.post(aos_url, data=json.dumps(payload), headers=headers, verify=False)
 
-    module.exit_json(changed=False,
-                     ansible_facts=dict(aos_session=aos.session),
-                     aos_session=dict(aos_session=aos.session))
+            if response.status_code == 201:
+                aos_session = {"server": mod_args['server'],
+                               "token": response.json()['token']}
+            elif response.status_code == 401:
+                module.fail_json(msg="AOS-server login failed: Invalid Credentials")
+            else:
+                module.fail_json(
+                    msg="AOS-server {} API not available/reachable, check server".format(aos_url))
+
+        except (requests.ConnectionError, requests.HTTPError, requests.Timeout) as e:
+            module.fail_json(
+                msg="Unable to connect to server {}: {}".format(aos_url, e))
+
+    module.exit_json(changed=True,
+                     ansible_facts=dict(aos_session=aos_session),
+                     aos_session=dict(aos_session=aos_session))
+
 
 def main():
     module = AnsibleModule(
@@ -119,14 +130,8 @@ def main():
             user=dict(default='admin'),
             passwd=dict(default='admin', no_log=True)))
 
-    if not HAS_AOS_PYEZ:
-        module.fail_json(msg='aos-pyez is not installed.  Please see details '
-                             'here: https://github.com/Apstra/aos-pyez')
-
-    # Check if aos-pyez is present and match the minimum version
-    check_aos_version(module, '0.6.1')
-
     aos_login(module)
+
 
 if __name__ == '__main__':
     main()

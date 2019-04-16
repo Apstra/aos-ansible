@@ -1,1 +1,7 @@
-aos-pyez>=0.5.0
+ansible>=2.7
+mock
+nose
+pylint
+requests
+tox
+urllib3

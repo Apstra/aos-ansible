@@ -9,3 +9,9 @@ Questions? Comments? Please use the github issues list.
 
 # License
 Apache 2.0
+
+
+# Testing
+
+`nosetests -v`
+

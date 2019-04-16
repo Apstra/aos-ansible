@@ -101,7 +101,7 @@ value:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.aos import get_aos_session, find_collection_item
+from aos import get_aos_session, find_collection_item
 
 def aos_device_normal(module, aos, dev):
 

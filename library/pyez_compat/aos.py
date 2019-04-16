@@ -34,7 +34,7 @@ This module adds shared support for Apstra AOS modules
 
 In order to use this module, include it as part of your module
 
-from ansible.module_utils.aos import *
+from aos import *
 
 """
 import json
@@ -65,7 +65,7 @@ def aos_get(session, endpoint):
         try:
             response = requests.get(aos_url, headers=headers, verify=False)
 
-            if response.ok:
+            if response.status_code == 200:
                 return response.json()
             else:
                 response.raise_for_status()
@@ -100,7 +100,7 @@ def aos_post(session, endpoint, payload):
                                      headers=headers,
                                      verify=False)
 
-            if response.ok:
+            if response.status_code == 202:
                 return response.json()
             else:
                 response.raise_for_status()
@@ -135,7 +135,7 @@ def aos_put(session, endpoint, payload):
                                     headers=headers,
                                     verify=False)
 
-            if response.ok:
+            if response.status_code == 202:
                 return response.json()
             else:
                 response.raise_for_status()
@@ -169,7 +169,7 @@ def aos_delete(session, endpoint, aos_id):
         try:
             response = requests.delete(aos_url, headers=headers, verify=False)
 
-            if response.ok:
+            if response.status_code == 202:
                 return response.json()
             else:
                 response.raise_for_status()
@@ -182,44 +182,28 @@ def aos_delete(session, endpoint, aos_id):
     return resp_data
 
 
-def find_resource_by_name(resource_data, name):
-
-    my_dict = next((item for item in resource_data['items']
-                    if item['display_name'] == name), None)
-
-    if my_dict:
-        return my_dict
-    else:
-        return {}
-
-
-def find_resource_by_id(resource_data, id):
-
-    my_dict = next((item for item in resource_data['items']
-                    if item['id'] == id), None)
-
-    if my_dict:
-        return my_dict
-    else:
-        return {}
-
-
 def find_resource_item(session, endpoint,
-                       resource_name=None,
-                       resource_id=None):
+                       item_name=False,
+                       item_id=False):
     """
-    Find an existing resource based on name or id from a given endpoint
+    Find an existing resource based on name or id from a a given endpoint
     :param session: dict
     :param endpoint: string
-    :param resource_name: string
-    :param resource_id: string
+    :param item_name: string
+    :param item_id: string
     :return: Returns collection item (dict)
     """
-    resource_data = aos_get(session, endpoint)
+    my_dict = {}
+    data = aos_get(session, endpoint)
 
-    if resource_name:
-        return find_resource_by_name(resource_data, resource_name)
-    elif resource_id:
-        return find_resource_by_id(resource_data, resource_id)
+    if item_name:
+        my_dict = next((item for item in data['items']
+                        if item['display_name'] == item_name), None)
+    elif item_id:
+        my_dict = next((item for item in data['items']
+                        if item['id'] == item_id), None)
+
+    if my_dict:
+        return my_dict
     else:
         return {}

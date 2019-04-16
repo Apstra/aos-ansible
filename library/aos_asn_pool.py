@@ -118,15 +118,14 @@ from module_utils.aos import aos_post, aos_put, aos_delete, find_resource_item
 ENDPOINT = 'resources/asn-pools'
 
 
-def check_ranges_are_valid(module, ranges):
+def validate_ranges(module, ranges):
     """
     Validate ASN ranges provided are valid and properly formatted
     :param module: Ansible built in
     :param ranges: list
     :return: bool
     """
-    i = 1
-    for asn_range in ranges:
+    for i, asn_range in enumerate(ranges, 1):
         if not isinstance(asn_range, list):
             module.fail_json(msg="Range {} must be a list not {}"
                              .format(i, type(asn_range)))
@@ -155,13 +154,7 @@ def get_ranges(pool):
     :param pool: list
     :return: dict
     """
-    ranges = []
-
-    for asn_range in pool:
-        ranges.append({'first': asn_range[0],
-                       'last': asn_range[1]})
-
-    return ranges
+    return [{"first": r[0], "last": r[1]} for r in pool]
 
 
 def asn_pool_absent(module, session, my_pool):
@@ -181,18 +174,12 @@ def asn_pool_absent(module, session, my_pool):
                          id='',
                          value={})
 
-    # Check if resource is currently in Use or Not
     if my_pool['status'] != 'not_in_use':
         module.fail_json(msg="Unable to delete ASN Pool '%s', currently"
                              " in use" % my_pool['display_name'])
 
-    # If not in check mode, delete Ip Pool
     if not module.check_mode:
-        try:
-            aos_delete(session, ENDPOINT, my_pool['id'])
-        except Exception as e:
-            module.fail_json(msg="Error deleting resource {}: {}"
-                             .format(my_pool['id'], e))
+        aos_delete(session, ENDPOINT, my_pool['id'])
 
     module.exit_json(changed=True,
                      name=my_pool['display_name'],
@@ -210,7 +197,6 @@ def asn_pool_present(module, session, my_pool):
     """
     margs = module.params
 
-    # if asn_pool doesn't exist already, create a new one
     if not my_pool:
 
         if 'name' not in margs.keys():
@@ -220,11 +206,7 @@ def asn_pool_present(module, session, my_pool):
                     "display_name": margs['name']}
 
         if not module.check_mode:
-            try:
-                resp = aos_post(session, ENDPOINT, new_pool)
-            except Exception as e:
-                module.fail_json(msg="Error creating resource {}: {}"
-                                 .format(new_pool['display_name'], e))
+            resp = aos_post(session, ENDPOINT, new_pool)
 
             module.exit_json(changed=True,
                              name=new_pool['display_name'],
@@ -249,11 +231,7 @@ def asn_pool_present(module, session, my_pool):
                                            'last': asn_range['last']})
 
             if not module.check_mode:
-                try:
-                    aos_put(session, endpoint_put, new_pool)
-                except Exception as e:
-                    module.fail_json(msg="Error updating resource {}: {}"
-                                     .format(my_pool['id'], e))
+                aos_put(session, endpoint_put, new_pool)
 
                 module.exit_json(changed=True,
                                  name=new_pool['display_name'],
@@ -274,9 +252,7 @@ def asn_pool(module):
 
     item_name = False
     item_id = False
-    my_pool = {}
 
-    # Check ID, Name and Ranges
     if margs['name'] is not None:
         item_name = margs['name']
 
@@ -284,22 +260,13 @@ def asn_pool(module):
         item_id = margs['id']
 
     if 'ranges' in margs.keys():
-        check_ranges_are_valid(module, margs['ranges'])
+        validate_ranges(module, margs['ranges'])
 
-    # ----------------------------------------------------
-    # Find resource pool if available based on ID or Name
-    # ----------------------------------------------------
-    try:
-        my_pool = find_resource_item(margs['session'], ENDPOINT,
-                                     item_name=item_name,
-                                     item_id=item_id)
-    except Exception as e:
-        module.fail_json(msg="Error finding resource {}: {}"
-                         .format(item_name, e))
+    my_pool = find_resource_item(margs['session'],
+                                 ENDPOINT,
+                                 resource_name=item_name,
+                                 resource_id=item_id)
 
-    # ----------------------------------------------------
-    # Proceed based on State value
-    # ----------------------------------------------------
     if margs['state'] == 'absent':
         asn_pool_absent(module, margs['session'], my_pool)
 
@@ -318,7 +285,7 @@ def main():
             id=dict(required=False),
             state=dict(required=False,
                        choices=['present', 'absent'],
-                       default="present"),
+                       default="present",),
             ranges=dict(required=False, type="list", default=[])
         ),
         mutually_exclusive=[('name', 'id')],

@@ -162,7 +162,7 @@ params_list:
 import json
 
 from ansible.module_utils.basic import AnsibleModule
-from ansible.module_utils.aos import get_aos_session, find_collection_item
+from aos import get_aos_session, find_collection_item
 from ansible.module_utils.pycompat24 import get_exception
 
 try:

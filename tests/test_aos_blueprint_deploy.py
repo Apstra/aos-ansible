@@ -1,6 +1,6 @@
 import mock
 import library.aos_blueprint_deploy as aos_blueprint_deploy
-
+from nose.tools import assert_equals
 
 @mock.patch('library.aos_blueprint_deploy.aos_blueprint_deploy')
 @mock.patch('library.aos_blueprint_deploy.AnsibleModule')

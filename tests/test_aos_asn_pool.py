@@ -1,4 +1,5 @@
 from ansible.compat.tests.mock import patch
+from ansible.module_utils import basic
 from nose.tools import assert_equals
 import library.aos_asn_pool as aos_asn_pool
 

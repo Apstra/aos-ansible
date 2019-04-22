@@ -30,9 +30,9 @@ author: Ryan Booth (@that1guy15)
 version_added: "2.7"
 short_description: Manage AOS ASN Pool
 description:
-  - Apstra AOS ASN Pool module lets you manage your ASN Pool easily. You can 
-    create and delete ASN Pools by Name, ID or by using a JSON File. This 
-    module is idempotent and supports the I(check) mode. 
+  - Apstra AOS ASN Pool module lets you manage your ASN Pool easily. You can
+    create and delete ASN Pools by Name, ID or by using a JSON File. This
+    module is idempotent and supports the I(check) mode.
     It's using the AOS REST API.
 options:
   session:
@@ -54,7 +54,7 @@ options:
     choices: ['present', 'absent']
   ranges:
     description:
-      - List of ASNs ranges to add to the ASN Pool. Each range (list) must have 
+      - List of ASNs ranges to add to the ASN Pool. Each range (list) must have
         2 values. A start of range and an end of range.
 '''
 
@@ -143,7 +143,6 @@ def validate_ranges(module, ranges):
         elif asn_range[1] <= asn_range[0]:
             module.fail_json(msg="2nd element of asn_range {} must be "
                                  "bigger than 1st ".format(i))
-        i += 1
 
     return True
 
@@ -203,7 +202,8 @@ def asn_pool_present(module, session, my_pool):
             module.fail_json(msg="name is required to create a new resource")
 
         new_pool = {"ranges": get_ranges(margs['ranges']),
-                    "display_name": margs['name']}
+                    "display_name": margs['name'],
+                    "id": margs['name']}
 
         if not module.check_mode:
             resp = aos_post(session, ENDPOINT, new_pool)
@@ -224,7 +224,8 @@ def asn_pool_present(module, session, my_pool):
             endpoint_put = "{}/{}".format(ENDPOINT, my_pool['id'])
 
             new_pool = {"ranges": get_ranges(margs['ranges']),
-                        "display_name": my_pool['display_name']}
+                        "display_name": my_pool['display_name'],
+                        "id": margs['name']}
 
             for asn_range in my_pool['ranges']:
                 new_pool['ranges'].append({'first': asn_range['first'],

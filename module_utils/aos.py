@@ -37,14 +37,37 @@ In order to use this module, include it as part of your module
 from ansible.module_utils.aos import *
 
 """
+import os
 import json
 import requests
-import urllib3
+from requests.adapters import HTTPAdapter
+from ansible.module_utils.parsing.convert_bool import boolean
 
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+def requests_header(session):
+    return {'AUTHTOKEN': session['token'],
+            'Accept': "application/json",
+            'Content-Type': "application/json",
+            'cache-control': "no-cache"}
 
-MAX_ATTEMPTS = 3
+
+def set_requests_verify():
+    return boolean(os.environ.get('AOS_VERIFY_CERTIFICATE', 'True'))
+
+
+def requests_retry(retries=3, session=None):
+
+    session = session or requests.Session()
+    adapter = HTTPAdapter(max_retries=retries)
+
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+
+    return session
+
+
+def requests_response(response):
+    return response.json() if response.ok else response.raise_for_status()
 
 
 def aos_get(session, endpoint):
@@ -55,27 +78,12 @@ def aos_get(session, endpoint):
     :return: dict
     """
     aos_url = "https://{}/api/{}".format(session['server'], endpoint)
-    headers = {'AUTHTOKEN': session['token'],
-               'Accept': "application/json",
-               'Content-Type': "application/json",
-               'cache-control': "no-cache"}
-    resp_data = {}
+    headers = requests_header(session)
+    response = requests_retry().get(aos_url,
+                                    headers=headers,
+                                    verify=set_requests_verify())
 
-    for attempt in range(MAX_ATTEMPTS):
-        try:
-            response = requests.get(aos_url, headers=headers, verify=False)
-
-            if response.ok:
-                return response.json()
-            else:
-                response.raise_for_status()
-
-        except (requests.ConnectionError,
-                requests.HTTPError,
-                requests.Timeout) as e:
-            return "Unable to connect to server {}: {}".format(aos_url, e)
-
-    return resp_data
+    return requests_response(response)
 
 
 def aos_post(session, endpoint, payload):
@@ -87,30 +95,13 @@ def aos_post(session, endpoint, payload):
     :return: dict
     """
     aos_url = "https://{}/api/{}".format(session['server'], endpoint)
-    headers = {'AUTHTOKEN': session['token'],
-               'Accept': "application/json",
-               'Content-Type': "application/json",
-               'cache-control': "no-cache"}
-    resp_data = {}
-
-    for attempt in range(MAX_ATTEMPTS):
-        try:
-            response = requests.post(aos_url,
+    headers = requests_header(session)
+    response = requests_retry().post(aos_url,
                                      data=json.dumps(payload),
                                      headers=headers,
-                                     verify=False)
+                                     verify=set_requests_verify())
 
-            if response.ok:
-                return response.json()
-            else:
-                response.raise_for_status()
-
-        except (requests.ConnectionError,
-                requests.HTTPError,
-                requests.Timeout) as e:
-            return "Unable to connect to server {}: {}".format(aos_url, e)
-
-    return resp_data
+    return requests_response(response)
 
 
 def aos_put(session, endpoint, payload):
@@ -122,30 +113,13 @@ def aos_put(session, endpoint, payload):
     :return: dict
     """
     aos_url = "https://{}/api/{}".format(session['server'], endpoint)
-    headers = {'AUTHTOKEN': session['token'],
-               'Accept': "application/json",
-               'Content-Type': "application/json",
-               'cache-control': "no-cache"}
-    resp_data = {}
-
-    for attempt in range(MAX_ATTEMPTS):
-        try:
-            response = requests.put(aos_url,
+    headers = requests_header(session)
+    response = requests_retry().put(aos_url,
                                     data=json.dumps(payload),
                                     headers=headers,
-                                    verify=False)
+                                    verify=set_requests_verify())
 
-            if response.ok:
-                return response.json()
-            else:
-                response.raise_for_status()
-
-        except (requests.ConnectionError,
-                requests.HTTPError,
-                requests.Timeout) as e:
-            return "Unable to connect to server {}: {}".format(aos_url, e)
-
-    return resp_data
+    return response
 
 
 def aos_delete(session, endpoint, aos_id):
@@ -159,49 +133,27 @@ def aos_delete(session, endpoint, aos_id):
     aos_url = "https://{}/api/{}/{}".format(session['server'],
                                             endpoint,
                                             aos_id)
-    headers = {'AUTHTOKEN': session['token'],
-               'Accept': "application/json",
-               'Content-Type': "application/json",
-               'cache-control': "no-cache"}
-    resp_data = {}
+    headers = requests_header(session)
+    response = requests_retry().delete(aos_url,
+                                       headers=headers,
+                                       verify=set_requests_verify())
 
-    for attempt in range(MAX_ATTEMPTS):
-        try:
-            response = requests.delete(aos_url, headers=headers, verify=False)
+    return requests_response(response)
 
-            if response.ok:
-                return response.json()
-            else:
-                response.raise_for_status()
 
-        except (requests.ConnectionError,
-                requests.HTTPError,
-                requests.Timeout) as e:
-            return "Unable to connect to server {}: {}".format(aos_url, e)
-
-    return resp_data
+def _find_resource(resource_data, key, keyword):
+    for item in resource_data['items']:
+        if item[keyword] == key:
+            return item
+    return {}
 
 
 def find_resource_by_name(resource_data, name):
-
-    my_dict = next((item for item in resource_data['items']
-                    if item['display_name'] == name), None)
-
-    if my_dict:
-        return my_dict
-    else:
-        return {}
+    return _find_resource(resource_data, name, "display_name")
 
 
-def find_resource_by_id(resource_data, id):
-
-    my_dict = next((item for item in resource_data['items']
-                    if item['id'] == id), None)
-
-    if my_dict:
-        return my_dict
-    else:
-        return {}
+def find_resource_by_id(resource_data, resource_id):
+    return _find_resource(resource_data, resource_id, "id")
 
 
 def find_resource_item(session, endpoint,

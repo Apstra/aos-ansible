@@ -1,5 +1,4 @@
 from ansible.compat.tests.mock import patch
-from ansible.module_utils import basic
 from nose.tools import assert_equals
 import library.aos_login as aos_login
 
@@ -16,27 +15,6 @@ class AnsibleFailJson(Exception):
     pass
 
 
-def exit_json(*args, **kwargs):
-    """function to patch over exit_json; package return
-    data into an exception"""
-    if 'changed' not in kwargs:
-        kwargs['changed'] = False
-    raise AnsibleExitJson(kwargs)
-
-
-def fail_json(*args, **kwargs):
-    """function to patch over fail_json; package return
-    data into an exception"""
-    kwargs['failed'] = True
-    raise AnsibleFailJson(kwargs)
-
-
-def module_exit_mock(mocker):
-    return mocker.patch.multiple(basic.AnsibleModule,
-                                 exit_json=exit_json,
-                                 fail_json=fail_json)
-
-
 @patch('library.aos_login.aos_login')
 @patch('library.aos_login.AnsibleModule')
 def test_module_args(mock_module, mock_aos_login):
@@ -51,6 +29,7 @@ def test_module_args(mock_module, mock_aos_login):
             'user': {'default': 'admin'},
             'passwd': {'default': 'admin', 'no_log': True}})
 
+
 @patch('library.aos_login.aos_login')
 @patch('library.aos_login.AnsibleModule')
 def test_aos_login_success(mock_module, mock_aos_login):
@@ -63,4 +42,3 @@ def test_aos_login_success(mock_module, mock_aos_login):
     mock_aos_login.return_value = mock_session
     resp = aos_login.aos_login()
     assert_equals(resp, mock_session)
-

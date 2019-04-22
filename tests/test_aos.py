@@ -1,24 +1,23 @@
 from ansible.compat.tests import unittest
-from ansible.compat.tests.mock import patch, MagicMock
-from ansible.module_utils import basic
-from nose.tools import assert_equals
+from ansible.compat.tests.mock import patch
 from module_utils.aos import find_resource_item, \
     find_resource_by_name, find_resource_by_id
 
 mock_data = {
-  "items": [
-    {
-      "display_name": "test-one",
-      "id": "test-1"
-    },
-    {
-      "display_name": "test-two",
-      "id": "test-2"
-    }
-  ]
+    "items": [
+        {
+            "display_name": "test-one",
+            "id": "test-1"
+        },
+        {
+            "display_name": "test-two",
+            "id": "test-2"
+        }
+    ]
 }
 
-class test_find_resource(unittest.TestCase):
+
+class TestFindResource(unittest.TestCase):
     def test_find_resource_by_name(self):
         mock_name = 'test-one'
         resp = find_resource_by_name(mock_data, mock_name)

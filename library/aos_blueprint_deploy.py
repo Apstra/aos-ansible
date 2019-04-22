@@ -30,7 +30,7 @@ version_added: "2.7"
 short_description: Deploy staged blueprint in AOS
 description:
   - Deploy staged blueprint changes in AOS. Changes to blueprint will be
-    deployed to all devices in the bluerint. 
+    deployed to all devices in the bluerint.
 options:
   session:
     description:
@@ -56,7 +56,7 @@ EXAMPLES = '''
 - name: Deploy Blueprint DC1-EVPN by id
   aos_blueprint_deploy:
     session: "{{ aos_session }}"
-    id: "{{ aos_blueprint_id }}"    
+    id: "{{ aos_blueprint_id }}"
 '''
 
 RETURNS = '''
@@ -67,153 +67,88 @@ blueprint_id:
   sample: "db6588fe-9f36-4b04-8def-89e7dcd00c17"
 '''
 
-import requests
-import urllib3
-from ansible.module_utils.basic import *
 
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+from ansible.module_utils.basic import AnsibleModule
+from module_utils.aos import aos_get, aos_put
 
-MAX_ATTEMPTS = 3
+ENDPOINT = 'blueprints'
 
 
 def get_blueprint_status(session, blueprint_id):
+    endpoint = "{}/{}/deploy".format(ENDPOINT, blueprint_id)
 
-    aos_url = "https://{}/api/blueprints/{}/deploy"\
-        .format(session['server'], blueprint_id)
-    headers = {'AUTHTOKEN': session['token'],
-               'Accept': "application/json",
-               'Content-Type': "application/json",
-               'cache-control': "no-cache"}
-    resp_data = {}
-
-    for attempt in range(MAX_ATTEMPTS):
-        try:
-            response = requests.get(aos_url, headers=headers, verify=False)
-
-            if response.ok:
-                resp_data = response.json()
-            else:
-                response.raise_for_status()
-
-        except (requests.ConnectionError,
-                requests.HTTPError,
-                requests.Timeout) as e:
-            return "Unable to connect to server {}: {}".format(aos_url, e)
+    resp_data = aos_get(session, endpoint)
 
     return resp_data
 
 
 def get_blueprint_version(session, blueprint_id):
-    aos_url = "https://{}/api/blueprints/{}"\
-        .format(session['server'], blueprint_id)
-    headers = {'AUTHTOKEN': session['token'],
-               'Accept': "application/json",
-               'Content-Type': "application/json",
-               'cache-control': "no-cache"}
-    resp_data = {}
+    endpoint = "{}/{}".format(ENDPOINT, blueprint_id)
 
-    for attempt in range(MAX_ATTEMPTS):
-        try:
-            response = requests.get(aos_url, headers=headers, verify=False)
+    resp_data = aos_get(session, endpoint)
 
-            if response.ok:
-                resp_data = response.json()
-            else:
-                response.raise_for_status()
-
-        except (requests.ConnectionError,
-                requests.HTTPError,
-                requests.Timeout) as e:
-            return "Unable to connect to server {}: {}".format(aos_url, e)
-
-    bp_ver = int(resp_data['version'])
-
-    if bp_ver:
-        return bp_ver
-    else:
-        return ''
+    return resp_data['version']
 
 
 def get_blueprint_id(session, blueprint_name):
-    aos_url = "https://{}/api/blueprints".format(session['server'])
-    headers = {'AUTHTOKEN': session['token'],
-               'Accept': "application/json",
-               'Content-Type': "application/json",
-               'cache-control': "no-cache"}
-    resp_data = {}
+    endpoint = "blueprints"
 
-    for attempt in range(MAX_ATTEMPTS):
-        try:
-            response = requests.get(aos_url, headers=headers, verify=False)
+    resp_data = aos_get(session, endpoint)
 
-            if response.ok:
-                resp_data = response.json()
-            else:
-                response.raise_for_status()
+    for i in resp_data['items']:
+        if i['label'] == blueprint_name:
+            return i['id']
 
-        except (requests.ConnectionError,
-                requests.HTTPError,
-                requests.Timeout) as e:
-            return "Unable to connect to server {}: {}".format(aos_url, e)
-
-    bp_id = [i['id'] for i in resp_data['items']
-             if i['label'] == blueprint_name]
-
-    if bp_id:
-        return bp_id[0]
-    else:
-        return []
+    return None
 
 
 def aos_blueprint_deploy(module):
     mod_args = module.params
 
     if mod_args['id']:
-        bp_id = mod_args['id']
+        blueprint_id = mod_args['id']
     else:
-        bp_id = get_blueprint_id(mod_args['session'], mod_args['name'])
+        blueprint_id = get_blueprint_id(mod_args['session'], mod_args['name'])
 
-    aos_url = "https://{}/api/blueprints/{}/deploy" \
-        .format(mod_args['session']['server'], bp_id)
+    endpoint = "{}/{}/deploy".format(ENDPOINT, blueprint_id)
 
-    headers = {'AUTHTOKEN': mod_args['session']['token'],
-               'Accept': "application/json",
-               'Content-Type': "application/json",
-               'cache-control': "no-cache"}
+    staged_version = get_blueprint_version(mod_args['session'],
+                                           blueprint_id)
+    deployed_version = get_blueprint_status(mod_args['session'],
+                                            blueprint_id)['version']
 
-    staged_version = get_blueprint_version(mod_args['session'], bp_id)
+    if staged_version == deployed_version:
+        module.exit_json(changed=False,
+                         ansible_facts=dict(blueprint_id=blueprint_id))
+
     payload = {"version": staged_version}
 
-    for attempt in range(MAX_ATTEMPTS):
+    response = aos_put(mod_args['session'], endpoint, payload)
+
+    if response.ok:
+
+        bp_status = get_blueprint_status(mod_args['session'], blueprint_id)
+
+        if bp_status['state'] == 'failure':
+            module.fail_json(msg="Unable to commit blueprint: {}"
+                             .format(bp_status['error']))
+
+        else:
+            module.exit_json(changed=True,
+                             ansible_facts=dict(blueprint_id=blueprint_id))
+
+    else:
+        error_message = str(response)
         try:
-            response = requests.put(aos_url,
-                                    data=json.dumps(payload),
-                                    headers=headers,
-                                    verify=False)
-
-            if response.ok:
-
-                bp_status = get_blueprint_status(mod_args['session'], bp_id)
-
-                if bp_status['state'] == 'failure':
-                    module.fail_json(msg="Unable to commit blueprint: {}"
-                                     .format(bp_status['error']))
-
-                else:
-                    module.exit_json(changed=True,
-                                     ansible_facts=dict(blueprint_id=bp_id))
-
-            else:
-                module.fail_json(
-                    msg="Issue deploying blueprint {}: {}"
-                        .format(bp_id, response))
-
-        except (requests.ConnectionError,
-                requests.HTTPError,
-                requests.Timeout) as e:
+            error_message = response.json().get('errors')
+        except (TypeError, ValueError) as e:
             module.fail_json(
-                msg="Unable to connect to server {}: {}"
-                    .format(aos_url, e))
+                msg="Failed to decode JSON from response: {}, error: {}"
+                    .format(response, e))
+
+        module.fail_json(
+            msg="Issue deploying blueprint {}: {}"
+                .format(blueprint_id, error_message))
 
 
 def main():

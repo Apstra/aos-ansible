@@ -33,7 +33,7 @@ description:
   - Obtain the AOS server session token by providing the required
     username and password credentials.  Upon successful authentication,
     this module will return the session-token that is required by all
-    subsequent AOS module usage. On success the module will automatically 
+    subsequent AOS module usage. On success the module will automatically
     populate ansible facts with the variable I(aos_session)
     This module is not idempotent and do not support check mode.
 options:
@@ -78,13 +78,9 @@ aos_session:
   sample: "eyJhbUdm45OiJIUzI1Ni3asvdsInR5cCI6IkpXVCJ9.eyJ1c2V..."
 '''
 
-import requests
-import urllib3
-from ansible.module_utils.basic import *
-
-urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
-
-MAX_ATTEMPTS = 3
+import json
+from ansible.module_utils.basic import AnsibleModule
+from module_utils.aos import requests_retry, set_requests_verify
 
 
 def aos_login(module):
@@ -93,33 +89,24 @@ def aos_login(module):
 
     aos_url = "https://{}/api/user/login".format(mod_args['server'])
 
-    aos_session = {}
     headers = {'Accept': "application/json",
                'Content-Type': "application/json",
                'cache-control': "no-cache"}
     payload = {"username": mod_args['user'],
                "password": mod_args['passwd']}
 
-    for attempt in range(MAX_ATTEMPTS):
-        try:
-            response = requests.post(aos_url,
+    response = requests_retry().post(aos_url,
                                      data=json.dumps(payload),
                                      headers=headers,
-                                     verify=False)
+                                     verify=set_requests_verify())
 
-            if response.status_code == 201:
-                return {"server": mod_args['server'],
-                        "token": response.json()['token']}
-            else:
-                module.fail_json(
-                    msg="Issue logging into AOS-server {}: {}"
-                        .format(aos_url, response.json()))
-
-        except (requests.ConnectionError,
-                requests.HTTPError,
-                requests.Timeout) as e:
-            module.fail_json(
-                msg="Unable to connect to server {}: {}".format(aos_url, e))
+    if response.status_code == 201:
+        return {"server": mod_args['server'],
+                "token": response.json()['token']}
+    else:
+        module.fail_json(
+            msg="Issue logging into AOS-server {}: {}"
+                .format(aos_url, response.json()))
 
 
 def main():
@@ -134,6 +121,7 @@ def main():
     module.exit_json(changed=True,
                      ansible_facts=dict(aos_session=aos_session),
                      aos_session=dict(aos_session=aos_session))
+
 
 if __name__ == '__main__':
     main()

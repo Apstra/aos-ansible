@@ -1,8 +1,7 @@
 from ansible.compat.tests.mock import patch
-from ansible.module_utils import basic
-from nose.tools import assert_equals
 from nose.tools import assert_equals
 import library.aos_asn_pool as aos_asn_pool
+
 
 @patch('library.aos_asn_pool.asn_pool')
 @patch('library.aos_asn_pool.AnsibleModule')
@@ -24,6 +23,7 @@ def test_module_args(mock_module,
                                   'default': []}},
         mutually_exclusive=[('name', 'id')],
         required_one_of=[('name', 'id')], supports_check_mode=True)
+
 
 @patch('library.aos_asn_pool.asn_pool')
 @patch('library.aos_asn_pool.AnsibleModule')

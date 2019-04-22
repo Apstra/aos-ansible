@@ -2,7 +2,8 @@ from ansible.compat.tests import unittest
 from ansible.compat.tests.mock import patch, MagicMock
 from ansible.module_utils import basic
 from nose.tools import assert_equals
-from module_utils.aos import find_resource_item, find_resource_by_name, find_resource_by_id
+from module_utils.aos import find_resource_item, \
+    find_resource_by_name, find_resource_by_id
 
 mock_data = {
   "items": [

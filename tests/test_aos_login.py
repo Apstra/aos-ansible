@@ -5,24 +5,28 @@ import library.aos_login as aos_login
 
 
 class AnsibleExitJson(Exception):
-    """Exception class to be raised by module.exit_json and caught by the test case"""
+    """Exception class to be raised by module.exit_json
+    and caught by the test case"""
     pass
 
 
 class AnsibleFailJson(Exception):
-    """Exception class to be raised by module.fail_json and caught by the test case"""
+    """Exception class to be raised by module.fail_json
+    and caught by the test case"""
     pass
 
 
 def exit_json(*args, **kwargs):
-    """function to patch over exit_json; package return data into an exception"""
+    """function to patch over exit_json; package return
+    data into an exception"""
     if 'changed' not in kwargs:
         kwargs['changed'] = False
     raise AnsibleExitJson(kwargs)
 
 
 def fail_json(*args, **kwargs):
-    """function to patch over fail_json; package return data into an exception"""
+    """function to patch over fail_json; package return
+    data into an exception"""
     kwargs['failed'] = True
     raise AnsibleFailJson(kwargs)
 

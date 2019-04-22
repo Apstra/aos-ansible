@@ -78,7 +78,8 @@ MAX_ATTEMPTS = 3
 
 def get_blueprint_status(session, blueprint_id):
 
-    aos_url = "https://{}/api/blueprints/{}/deploy".format(session['server'], blueprint_id)
+    aos_url = "https://{}/api/blueprints/{}/deploy"\
+        .format(session['server'], blueprint_id)
     headers = {'AUTHTOKEN': session['token'],
                'Accept': "application/json",
                'Content-Type': "application/json",
@@ -103,7 +104,8 @@ def get_blueprint_status(session, blueprint_id):
 
 
 def get_blueprint_version(session, blueprint_id):
-    aos_url = "https://{}/api/blueprints/{}".format(session['server'], blueprint_id)
+    aos_url = "https://{}/api/blueprints/{}"\
+        .format(session['server'], blueprint_id)
     headers = {'AUTHTOKEN': session['token'],
                'Accept': "application/json",
                'Content-Type': "application/json",
@@ -193,7 +195,7 @@ def aos_blueprint_deploy(module):
 
                 bp_status = get_blueprint_status(mod_args['session'], bp_id)
 
-                if bp_status['status'] == 'failure':
+                if bp_status['state'] == 'failure':
                     module.fail_json(msg="Unable to commit blueprint: {}"
                                      .format(bp_status['error']))
 

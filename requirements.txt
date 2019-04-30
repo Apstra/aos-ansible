@@ -1,1 +1,4 @@
-aos-pyez>=0.5.0
+ansible>=2.7.9
+requests==2.21.0
+tox==3.7.0
+urllib3==1.24.1

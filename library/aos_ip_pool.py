@@ -30,9 +30,9 @@ author: Ryan Booth (@that1guy15)
 version_added: "2.7"
 short_description: Manage AOS IP Pool
 description:
-  - Apstra AOS IP Pool module lets you manage your IP Pool easily. You can 
-    create and delete IP Pools by Name, ID or by using a JSON File. This 
-    module is idempotent and supports the I(check) mode. 
+  - Apstra AOS IP Pool module lets you manage your IP Pools easily. You can
+    create and delete IP Pools by Name or ID. This
+    module is idempotent and supports the I(check) mode.
     It's using the AOS REST API.
 options:
   session:
@@ -42,11 +42,11 @@ options:
   name:
     description:
       - Name of the IP Pool to manage.
-        Only one of I(name), I(id) or I(content) can be set.
+        Only one of I(name) or I(id) can be set.
   id:
     description:
       - AOS Id of the IP Pool to manage.
-        Only one of I(name), I(id) or I(content) can be set.
+        Only one of I(name) or I(id) can be set.
   state:
     description:
       - Indicates the expected state of the IP Pool (present or absent).
@@ -54,12 +54,13 @@ options:
     choices: ['present', 'absent']
   subnets:
     description:
-      - List of IP subnets to add to the IP Pool. Each subnet (list) must be 
+      - List of IP subnets to add to the IP Pool. Each subnet (list) must be
         given in valid CIDR notation. ex 192.168.59.0/24 or 2005::0/64. All
         subnets given must be of the same type defined with 'ip_version'
   ip_version:
     description:
-      - IPv4 (4) or IPv6 (6) address type of the subnets being added. 
+      - IPv4 (4) or IPv6 (6) address type of the subnets being added.
+    default: 4 (IPv4)
 '''
 
 EXAMPLES = '''
@@ -129,7 +130,7 @@ value:
 
 import ipaddress
 from ansible.module_utils.basic import AnsibleModule
-from module_utils.aos import aos_post, aos_put, aos_delete, find_resource_item
+from library.aos import aos_post, aos_put, aos_delete, find_resource_item
 
 V4_ENDPOINT = 'resources/ip-pools'
 V6_ENDPOINT = 'resources/ipv6-pools'
@@ -306,9 +307,9 @@ def main():
                        default="present",),
             subnets=dict(required=False, type="list", default=[]),
             ip_version=dict(required=False,
-                             type="int",
-                             choices=[4, 6],
-                             default=4),
+                            type="int",
+                            choices=[4, 6],
+                            default=4),
         ),
         mutually_exclusive=[('name', 'id')],
         required_one_of=[('name', 'id')],

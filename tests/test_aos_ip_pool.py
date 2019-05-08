@@ -1,8 +1,7 @@
 from ansible.compat.tests.mock import patch
-from ansible.module_utils import basic
-from nose.tools import assert_equals
 from nose.tools import assert_equals
 import library.aos_ip_pool as aos_ip_pool
+
 
 @patch('library.aos_ip_pool.ip_pool')
 @patch('library.aos_ip_pool.AnsibleModule')
@@ -30,6 +29,7 @@ def test_module_args(mock_module,
         mutually_exclusive=[('name', 'id')],
         required_one_of=[('name', 'id')],
         supports_check_mode=True)
+
 
 @patch('library.aos_ip_pool.ip_pool')
 @patch('library.aos_ip_pool.AnsibleModule')

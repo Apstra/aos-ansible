@@ -1,0 +1,249 @@
+
+  - set_fact:
+      ip_pool1:
+        network: '192.168.59.0/24'
+      ip_pool2:
+        network: '192.168.60.0/24'
+      ip_pool3:
+        network: '10.10.10.0/23'
+      ip_pool4:
+        network: '192.168.70.0/24'
+      ip_pool5:
+        network: '10.10.20.0/23'
+
+  - set_fact:
+      ipv6_pool1:
+        network: 'fe80:0:0:1::/64'
+      ipv6_pool2:
+        network: 'fe80:0:0:2::/64'
+      ipv6_pool3:
+        network: 'fe80:0:0:3e::/64'
+      ipv6_pool4:
+        network: 'fe80:0:0:4f::/64'
+      ipv6_pool5:
+        network: 'fe80:0:0:5b::/64'
+
+  - name: Create a session with the AOS-server
+    local_action:
+      module: aos_login
+      server: "{{ ansible_host }}"
+      user: "{{ ansible_ssh_user }}"
+      passwd: "{{ ansible_ssh_pass }}"
+      port: 443
+    run_once: true
+
+  - name: test_create_new_ipv4_pool_invalid_subnet
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      name: "my-ip-pool"
+      subnets:
+        - '192.168.359.0/24'
+      state: present
+    register: ippool
+    ignore_errors: True
+
+  - name: check_test_create_new_ipv4_pool_invalid_subnet
+    assert:
+      that:
+        - ippool|failed
+        - "'does not appear to be an IPv4 or IPv6 network' in ippool.msg"
+
+  - name: test_create_new_ipv4_pool
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      name: "my-ip-pool"
+      subnets:
+        - '192.168.59.0/24'
+      state: present
+    register: ippool
+
+  - name: check_test_create_new_ipv4_pool
+    assert:
+      that:
+        - ippool|success
+        - ippool|changed
+        - ippool.id == "my-ip-pool"
+        - ippool.name == "my-ip-pool"
+        - ippool.value.subnets == [ip_pool1]
+
+  - name: test_update_ipv4_pool_by_name
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      name: "{{ ippool.name }}"
+      subnets:
+        - '192.168.60.0/24'
+        - '10.10.10.0/23'
+      state: present
+      ip_version: 4
+    register: ippool
+
+  - name: check_test_update_ipv4_pool_by_name
+    assert:
+      that:
+        - ippool|success
+        - ippool|changed
+        - ippool.id == "my-ip-pool"
+        - ippool.name == "my-ip-pool"
+        - ippool.value.subnets == ip_pool_subnets
+    vars:
+      ip_pool_subnets:
+        - "{{ip_pool2}}"
+        - "{{ip_pool3}}"
+        - "{{ip_pool1}}"
+
+  - name: test_update_ipv4_pool_by_id
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      name: "{{ ippool.id }}"
+      subnets:
+        - '192.168.70.0/24'
+        - '10.10.20.0/23'
+      state: present
+      ip_version: 4
+    register: ippool
+
+  - name: check_test_update_ipv4_pool_by_id
+    assert:
+      that:
+        - ippool|success
+        - ippool|changed
+        - ippool.id == "my-ip-pool"
+        - ippool.value.subnets == ip_pool_subnets
+    vars:
+      ip_pool_subnets:
+        - "{{ip_pool4}}"
+        - "{{ip_pool5}}"
+        - "{{ip_pool3}}"
+        - "{{ip_pool1}}"
+        - "{{ip_pool2}}"
+
+  - name: test_delete_ipv4_pool
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      name: "{{ ippool.name }}"
+      state: absent
+    register: ippool
+
+  - name: check_test_delete_ipv4_pool
+    assert:
+      that:
+        - ippool|success
+        - ippool|changed
+        - ippool.id == "my-ip-pool"
+        - ippool.name == "my-ip-pool"
+        - ippool.value == {}
+
+  - name: test_create_new_ipv6_pool_invalid_subnet
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      name: "my-ip-pool"
+      subnets:
+        - 'fe80:0:g:1::/64'
+      state: present
+    register: ip6pool
+    ignore_errors: True
+
+  - name: check_test_create_new_ipv6_pool_invalid_subnet
+    assert:
+      that:
+        - ip6pool|failed
+        - "'does not appear to be an IPv4 or IPv6 network' in ip6pool.msg"
+
+
+  - name: test_create_new_ipv6_pool
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      name: "my-ipv6-pool"
+      subnets:
+        - 'fe80:0:0:1::/64'
+      state: present
+      ip_version: 6
+    register: ip6pool
+
+  - name: check_test_create_new_ipv6_pool
+    assert:
+      that:
+        - ip6pool|success
+        - ip6pool|changed
+        - ip6pool.id == "my-ipv6-pool"
+        - ip6pool.name == "my-ipv6-pool"
+        - ip6pool.value.subnets == [ipv6_pool1]
+
+  - name: test_update_ipv6_pool_by_name
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      name: "{{ ip6pool.name }}"
+      subnets:
+        - 'fe80:0:0:2::/64'
+        - 'fe80:0:0:3e::/64'
+      state: present
+      ip_version: 6
+    register: ip6pool
+
+  - name: check_test_update_ipv6_pool_by_name
+    assert:
+      that:
+        - ip6pool|success
+        - ip6pool|changed
+        - ip6pool.id == "my-ipv6-pool"
+        - ip6pool.name == "my-ipv6-pool"
+        - ip6pool.value.subnets == ipv6_pool_subnets
+    vars:
+      ipv6_pool_subnets:
+        - "{{ipv6_pool2}}"
+        - "{{ipv6_pool3}}"
+        - "{{ipv6_pool1}}"
+
+  - name: test_update_ipv6_pool_by_id
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      name: "{{ ip6pool.id }}"
+      subnets:
+        - 'fe80:0:0:4f::/64'
+        - 'fe80:0:0:5b::/64'
+      state: present
+      ip_version: 6
+    register: ip6pool
+
+  - name: check_test_update_ipv6_pool_by_id
+    assert:
+      that:
+        - ip6pool|success
+        - ip6pool|changed
+        - ip6pool.id == "my-ipv6-pool"
+        - ip6pool.name == "my-ipv6-pool"
+        - ip6pool.value.subnets == ipv6_pool_subnets
+    vars:
+      ipv6_pool_subnets:
+        - "{{ipv6_pool4}}"
+        - "{{ipv6_pool5}}"
+        - "{{ipv6_pool1}}"
+        - "{{ipv6_pool2}}"
+        - "{{ipv6_pool3}}"
+
+  - name: test_delete_ipv6_pool
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      id: "{{ ip6pool.id }}"
+      state: absent
+      ip_version: 6
+    register: ip6pool
+
+  - name: check_test_delete_ipv6_pool
+    assert:
+      that:
+        - ip6pool|success
+        - ip6pool|changed
+        - ip6pool.id == "my-ipv6-pool"
+        - ip6pool.name == "my-ipv6-pool"
+        - ip6pool.value == {}

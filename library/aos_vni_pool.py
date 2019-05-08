@@ -30,9 +30,9 @@ author: Ryan Booth (@that1guy15)
 version_added: "2.7"
 short_description: Manage AOS VNI Pool
 description:
-  - Apstra AOS VNI Pool module lets you manage your VNI pools easily. You can 
-    create and delete VNI Pools by Name, ID or by using a JSON File. This 
-    module is idempotent and supports the I(check) mode. 
+  - Apstra AOS VNI Pool module lets you manage your VNI pools easily. You can
+    create and delete VNI Pools by Name, ID or by using a JSON File. This
+    module is idempotent and supports the I(check) mode.
     It's using the AOS REST API.
 options:
   session:
@@ -54,7 +54,7 @@ options:
     choices: ['present', 'absent']
   ranges:
     description:
-      - List of VNIs ranges to add to the VNI Pool. Each range (list) must have 
+      - List of VNIs ranges to add to the VNI Pool. Each range (list) must have
         2 values. A start of range and an end of range.
 '''
 
@@ -113,7 +113,7 @@ value:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from module_utils.aos import aos_post, aos_put, aos_delete, find_resource_item
+from library.aos import aos_post, aos_put, aos_delete, find_resource_item
 
 ENDPOINT = 'resources/vni-pools'
 
@@ -207,7 +207,8 @@ def vni_pool_present(module, session, my_pool):
             module.fail_json(msg="name is required to create a new resource")
 
         new_pool = {"ranges": get_ranges(margs['ranges']),
-                    "display_name": margs['name']}
+                    "display_name": margs['name'],
+                    "id": margs['name']}
 
         if not module.check_mode:
             resp = aos_post(session, ENDPOINT, new_pool)
@@ -228,7 +229,8 @@ def vni_pool_present(module, session, my_pool):
             endpoint_put = "{}/{}".format(ENDPOINT, my_pool['id'])
 
             new_pool = {"ranges": get_ranges(margs['ranges']),
-                        "display_name": my_pool['display_name']}
+                        "display_name": margs['name'],
+                        "id": margs['name']}
 
             for vni_range in my_pool['ranges']:
                 new_pool['ranges'].append({'first': vni_range['first'],

@@ -80,7 +80,7 @@ aos_session:
 
 import json
 from ansible.module_utils.basic import AnsibleModule
-from module_utils.aos import requests_retry, set_requests_verify
+from library.aos import requests_retry, set_requests_verify
 
 
 def aos_login(module):

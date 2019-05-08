@@ -1,0 +1,6 @@
+{
+  "tests/test_aos.py": true, 
+  "tests/test_aos_asn_pool.py": true, 
+  "tests/test_aos_blueprint_deploy.py": true, 
+  "tests/test_aos_login.py": true
+}

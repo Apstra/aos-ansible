@@ -1,0 +1,119 @@
+
+  - set_fact:
+      asn_pool1:
+        first: 100
+        last: 199
+      asn_pool2:
+        first: 200
+        last: 299
+      asn_pool3:
+        first: 300
+        last: 399
+
+  - name: Create a session with the AOS-server
+    local_action:
+      module: aos_login
+      server: "{{ ansible_host }}"
+      user: "{{ ansible_ssh_user }}"
+      passwd: "{{ ansible_ssh_pass }}"
+      port: 443
+    run_once: true
+
+  - name: test_create_new_asn_pool_invalid
+    local_action:
+      module: aos_asn_pool
+      session: "{{ aos_session }}"
+      name: "my-asn-pool"
+      ranges:
+        - [ 199, 100 ]
+      state: present
+    register: asnpool
+    ignore_errors: True
+
+  - name: check_test_create_new_asn_pool_invalid
+    assert:
+      that:
+        - asnpool|failed
+        - "'2nd element of asn_range 1 must be bigger than 1st' in asnpool.msg"
+
+  - name: test_create_new_asn_pool
+    local_action:
+      module: aos_asn_pool
+      session: "{{ aos_session }}"
+      name: "my-asn-pool"
+      ranges:
+        - [ 100, 199 ]
+      state: present
+    register: asnpool
+
+  - name: check_test_create_new_asn_pool
+    assert:
+      that:
+        - asnpool|success
+        - asnpool|changed
+        - asnpool.id == "my-asn-pool"
+        - asnpool.name == "my-asn-pool"
+        - asnpool.value.ranges == [asn_pool1]
+
+  - name: test_update_asn_pool_by_name
+    local_action:
+      module: aos_asn_pool
+      session: "{{ aos_session }}"
+      name: "{{ asnpool.name }}"
+      ranges:
+        - [ 200, 299 ]
+      state: present
+    register: asnpool
+
+  - name: check_test_update_asn_pool_by_name
+    assert:
+      that:
+        - asnpool|success
+        - asnpool|changed
+        - asnpool.id == "my-asn-pool"
+        - asnpool.name == "my-asn-pool"
+        - asnpool.value.ranges == asn_pool_range
+    vars:
+      asn_pool_range:
+        - "{{asn_pool2}}"
+        - "{{asn_pool1}}"
+
+  - name: test_update_asn_pool_by_id
+    local_action:
+      module: aos_asn_pool
+      session: "{{ aos_session }}"
+      id: "{{ asnpool.id }}"
+      ranges:
+        - [ 300, 399 ]
+      state: present
+    register: asnpool
+
+  - name: check_test_update_asn_pool_by_id
+    assert:
+      that:
+        - asnpool|success
+        - asnpool|changed
+        - asnpool.id == "my-asn-pool"
+        - asnpool.value.ranges == asn_pool_range
+    vars:
+      asn_pool_range:
+        - "{{asn_pool3}}"
+        - "{{asn_pool1}}"
+        - "{{asn_pool2}}"
+
+  - name: test_delete_asn_pool
+    local_action:
+      module: aos_asn_pool
+      session: "{{ aos_session }}"
+      id: "{{ asnpool.id }}"
+      state: absent
+    register: asnpool
+
+  - name: check_test_delete_asn_pool
+    assert:
+      that:
+        - asnpool|success
+        - asnpool|changed
+        - asnpool.id == "my-asn-pool"
+        - asnpool.name == "my-asn-pool"
+        - asnpool.value == {}

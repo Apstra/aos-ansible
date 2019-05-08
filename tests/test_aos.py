@@ -1,8 +1,6 @@
 from ansible.compat.tests import unittest
-from ansible.compat.tests.mock import patch, MagicMock
-from ansible.module_utils import basic
-from nose.tools import assert_equals
-from module_utils.aos import find_resource_item, \
+from ansible.compat.tests.mock import patch
+from library.aos import find_resource_item, \
     find_resource_by_name, find_resource_by_id
 
 mock_data = {
@@ -48,7 +46,7 @@ class TestFindResource(unittest.TestCase):
 
         self.assertEqual(resp, {})
 
-    @patch('module_utils.aos.aos_get')
+    @patch('library.aos.aos_get')
     def test_find_resource_item_name(self, test_patch):
         test_patch.return_value = mock_data
         session = {"server": "foo",
@@ -63,7 +61,7 @@ class TestFindResource(unittest.TestCase):
 
         self.assertEqual(resp, return_data)
 
-    @patch('module_utils.aos.aos_get')
+    @patch('library.aos.aos_get')
     def test_find_resource_item_id(self, test_patch):
         test_patch.return_value = mock_data
         session = {"server": "foo",
@@ -78,7 +76,7 @@ class TestFindResource(unittest.TestCase):
 
         self.assertEqual(resp, return_data)
 
-    @patch('module_utils.aos.aos_get')
+    @patch('library.aos.aos_get')
     def test_find_resource_item_not_found(self, test_patch):
         test_patch.return_value = mock_data
         session = {"server": "foo",

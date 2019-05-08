@@ -1,7 +1,6 @@
 .tox/
 venv/
 ENV/
-ansible.cfg
-inventory.ini
 .idea/
 *.retry
+.cache/

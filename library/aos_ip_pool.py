@@ -264,8 +264,8 @@ def ip_pool(module):
     """
     margs = module.params
 
-    item_name = False
-    item_id = False
+    item_name = None
+    item_id = None
 
     if margs['name'] is not None:
         item_name = margs['name']

@@ -19,11 +19,9 @@ inventory of your own AOS test server.
 #### Run test (tox)
 
 NOTE: Ansible playbook `test_playbook.yaml` relies on the AOS instance
-from `ansible.cfg` to be running or these tests will fail
+from `inventory.ini` to be running or these tests will fail
 
 ~~~~
-pip install -r requirements.txt
-pip install -r test-requirements.txt
 tox
 ~~~~
 

@@ -4,3 +4,4 @@ ENV/
 .idea/
 *.retry
 .cache/
+vault_pass.txt

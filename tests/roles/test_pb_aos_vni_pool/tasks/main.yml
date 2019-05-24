@@ -19,7 +19,41 @@
       port: 443
     run_once: true
 
-  - name: test_create_new_vni_pool_invalid
+  - name: test_create_new_vni_pool_invalid_type
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      name: "my-vni-pool"
+      ranges:
+        - [ 4200, 'test1' ]
+      state: present
+    register: vnipool
+    ignore_errors: True
+
+  - name: check_test_create_new_vni_pool_invalid
+    assert:
+      that:
+        - vnipool|failed
+        - "'Invalid range: Expected integer values' in vnipool.msg"
+
+  - name: test_create_new_vni_pool_invalid_extra
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      name: "my-vni-pool"
+      ranges:
+        - [ 4096, 4200, 4300 ]
+      state: present
+    register: vnipool
+    ignore_errors: True
+
+  - name: check_test_create_new_vni_pool_invalid
+    assert:
+      that:
+        - vnipool|failed
+        - "'Invalid range: must be a list of 2 members' in vnipool.msg"
+
+  - name: test_create_new_vni_pool_invalid_order
     local_action:
       module: aos_vni_pool
       session: "{{ aos_session }}"
@@ -34,7 +68,41 @@
     assert:
       that:
         - vnipool|failed
-        - "'2nd element of vni_range 1 must be bigger than 1st' in vnipool.msg"
+        - "'Invalid range: 2nd element must be bigger than 1st' in vnipool.msg"
+
+  - name: test_create_new_vni_pool_invalid_range
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      name: "my-vni-pool"
+      ranges:
+        - [ 111, 222 ]
+      state: present
+    register: vnipool
+    ignore_errors: True
+
+  - name: check_test_create_new_vni_pool_invalid
+    assert:
+      that:
+        - vnipool|failed
+        - "'Invalid range: must be a valid range between 4096 and 16777214' in vnipool.msg"
+
+  - name: test_create_new_empty_vni_pool
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      name: "my-blank-vni-pool"
+      state: present
+    register: vniblank
+
+  - name: check_test_create_new_empty_vni_pool
+    assert:
+      that:
+        - vniblank|success
+        - vniblank|changed
+        - vniblank.id == "my-blank-vni-pool"
+        - vniblank.name == "my-blank-vni-pool"
+        - vniblank.value.ranges == []
 
   - name: test_create_new_vni_pool
     local_action:
@@ -115,5 +183,5 @@
         - vnipool|success
         - vnipool|changed
         - vnipool.id == "my-vni-pool"
-        - vnipool.name == "my-vni-pool"
+        - vnipool.name == ""
         - vnipool.value == {}

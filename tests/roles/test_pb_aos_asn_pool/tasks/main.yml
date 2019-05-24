@@ -19,7 +19,41 @@
       port: 443
     run_once: true
 
-  - name: test_create_new_asn_pool_invalid
+  - name: test_create_new_asn_pool_invalid_type
+    local_action:
+      module: aos_asn_pool
+      session: "{{ aos_session }}"
+      name: "my-asn-pool"
+      ranges:
+        - [ 100, 'test1' ]
+      state: present
+    register: asnpool
+    ignore_errors: True
+
+  - name: check_test_create_new_asn_pool_invalid_type
+    assert:
+      that:
+        - asnpool|failed
+        - "'Invalid range: Expected integer values' in asnpool.msg"
+
+  - name: test_create_new_asn_pool_invalid_extra
+    local_action:
+      module: aos_asn_pool
+      session: "{{ aos_session }}"
+      name: "my-asn-pool"
+      ranges:
+        - [ 100, 199, 205 ]
+      state: present
+    register: asnpool
+    ignore_errors: True
+
+  - name: check_test_create_new_asn_pool_invalid_extra
+    assert:
+      that:
+        - asnpool|failed
+        - "'Invalid range: must be a list of 2 members' in asnpool.msg"
+
+  - name: test_create_new_asn_pool_invalid_order
     local_action:
       module: aos_asn_pool
       session: "{{ aos_session }}"
@@ -30,11 +64,28 @@
     register: asnpool
     ignore_errors: True
 
-  - name: check_test_create_new_asn_pool_invalid
+  - name: check_test_create_new_asn_pool_invalid_order
     assert:
       that:
         - asnpool|failed
-        - "'2nd element of asn_range 1 must be bigger than 1st' in asnpool.msg"
+        - "'Invalid range: 2nd element must be bigger than 1st' in asnpool.msg"
+
+  - name: test_create_new_empty_asn_pool
+    local_action:
+      module: aos_asn_pool
+      session: "{{ aos_session }}"
+      name: "my-blank-asn-pool"
+      state: present
+    register: asnpool
+
+  - name: check_test_create_new_blank_asn_pool
+    assert:
+      that:
+        - asnpool|success
+        - asnpool|changed
+        - asnpool.id == "my-blank-asn-pool"
+        - asnpool.name == "my-blank-asn-pool"
+        - asnpool.value.ranges == []
 
   - name: test_create_new_asn_pool
     local_action:
@@ -115,5 +166,5 @@
         - asnpool|success
         - asnpool|changed
         - asnpool.id == "my-asn-pool"
-        - asnpool.name == "my-asn-pool"
+        - asnpool.name == ""
         - asnpool.value == {}

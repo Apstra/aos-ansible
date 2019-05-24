@@ -113,141 +113,7 @@ value:
 '''
 
 from ansible.module_utils.basic import AnsibleModule
-from library.aos import aos_post, aos_put, aos_delete, find_resource_item
-
-ENDPOINT = 'resources/vni-pools'
-
-
-def validate_ranges(module, ranges):
-    """
-    Validate VNI ranges provided are valid and properly formatted
-    :param module: Ansible built in
-    :param ranges: list
-    :return: bool
-    """
-    for i, vni_range in enumerate(ranges, 1):
-        if not isinstance(vni_range, list):
-            module.fail_json(msg="Range {} must be a list not {}"
-                             .format(i, type(vni_range)))
-        elif len(vni_range) != 2:
-            module.fail_json(msg="Range {} must be a list of 2 members, not {}"
-                             .format(len(vni_range), i))
-        elif not isinstance(vni_range[0], int):
-            module.fail_json(msg="1st element of vni_range {} must be "
-                                 "integer instead of {} "
-                             .format(i, type(vni_range[0])))
-        elif not isinstance(vni_range[1], int):
-            module.fail_json(msg="2nd element of vni_range {} must be "
-                                 "integer instead of {} "
-                             .format(i, type(vni_range[1])))
-        elif vni_range[1] <= vni_range[0]:
-            module.fail_json(msg="2nd element of vni_range {} must be "
-                                 "bigger than 1st ".format(i))
-        elif vni_range[0] <= 4095 or vni_range[1] >= 16777213:
-            module.fail_json(msg="Range {} must be a valid range between 4096"
-                                 " and 16777214"
-                             .format(vni_range[0]))
-        i += 1
-
-    return True
-
-
-def get_ranges(pool):
-    """
-    convert VNI pool list to dict format
-    :param pool: list
-    :return: dict
-    """
-    return [{"first": r[0], "last": r[1]} for r in pool]
-
-
-def vni_pool_absent(module, session, my_pool):
-    """
-    Remove VNI pool if exist and is not in use
-    :param module: Ansible built in
-    :param session: dict
-    :param my_pool: dict
-    :return: dict
-    """
-    margs = module.params
-
-    # If the resource does not exist, return directly
-    if not my_pool:
-        module.exit_json(changed=False,
-                         name=margs['name'],
-                         id='',
-                         value={})
-
-    if my_pool['status'] != 'not_in_use':
-        module.fail_json(msg="Unable to delete VNI Pool '%s', currently"
-                             " in use" % my_pool['display_name'])
-
-    if not module.check_mode:
-        aos_delete(session, ENDPOINT, my_pool['id'])
-
-    module.exit_json(changed=True,
-                     name=my_pool['display_name'],
-                     id=my_pool['id'],
-                     value={})
-
-
-def vni_pool_present(module, session, my_pool):
-    """
-    Create new VNI pool or modify existing pool
-    :param module: Ansible built in
-    :param session: dict
-    :param my_pool: dict
-    :return: dict
-    """
-    margs = module.params
-
-    if not my_pool:
-
-        if 'name' not in margs.keys():
-            module.fail_json(msg="name is required to create a new resource")
-
-        new_pool = {"ranges": get_ranges(margs['ranges']),
-                    "display_name": margs['name'],
-                    "id": margs['name']}
-
-        if not module.check_mode:
-            resp = aos_post(session, ENDPOINT, new_pool)
-
-            module.exit_json(changed=True,
-                             name=new_pool['display_name'],
-                             id=resp['id'],
-                             value=new_pool)
-
-        module.exit_json(changed=False,
-                         name=new_pool['display_name'],
-                         id={},
-                         value={})
-
-    else:
-        if my_pool['ranges']:
-
-            endpoint_put = "{}/{}".format(ENDPOINT, my_pool['id'])
-
-            new_pool = {"ranges": get_ranges(margs['ranges']),
-                        "display_name": margs['name'],
-                        "id": margs['name']}
-
-            for vni_range in my_pool['ranges']:
-                new_pool['ranges'].append({'first': vni_range['first'],
-                                           'last': vni_range['last']})
-
-            if not module.check_mode:
-                aos_put(session, endpoint_put, new_pool)
-
-                module.exit_json(changed=True,
-                                 name=new_pool['display_name'],
-                                 id=my_pool['id'],
-                                 value=new_pool)
-
-            module.exit_json(changed=False,
-                             name=new_pool['display_name'],
-                             id={},
-                             value={})
+from library.aos_resource import VniPool
 
 
 def vni_pool(module):
@@ -255,29 +121,47 @@ def vni_pool(module):
     Main function to create, change or delete AOS VNI resource pool
     """
     margs = module.params
+    target_state = margs['state']
+    new_range = margs['ranges']
 
-    item_name = None
-    item_id = None
-
-    if margs['name'] is not None:
-        item_name = margs['name']
-
-    elif margs['id'] is not None:
-        item_id = margs['id']
+    pool = VniPool(module, margs['session'], module.check_mode)
 
     if 'ranges' in margs.keys():
-        validate_ranges(module, margs['ranges'])
+        errors = pool.validate(new_range)
 
-    my_pool = find_resource_item(margs['session'],
-                                 ENDPOINT,
-                                 resource_name=item_name,
-                                 resource_id=item_id)
+        if errors:
+            pool.module_exit(error=errors,
+                             name='', uuid='',
+                             value='', changed=False)
 
-    if margs['state'] == 'absent':
-        vni_pool_absent(module, margs['session'], my_pool)
+    new_ranges = pool.get_ranges(new_range)
 
-    elif margs['state'] == 'present':
-        vni_pool_present(module, margs['session'], my_pool)
+    existing = {}
+
+    if margs['name'] is not None:
+        name = margs['name']
+        existing = pool.find_by_name(name)
+
+    if margs['id'] is not None:
+        uuid = margs['id']
+        existing = pool.find_by_id(uuid)
+
+    if target_state == 'present':
+        if not existing:
+            pool.create(new_ranges, margs['name'])
+        else:
+            pool.update(existing["display_name"],
+                        existing["id"],
+                        existing["ranges"],
+                        new_ranges)
+
+    elif target_state == "absent":
+        if not existing:
+            return pool.module_exit(error=[],
+                                    name='', uuid='',
+                                    value='', changed=False)
+
+        pool.delete(existing["id"])
 
 
 def main():

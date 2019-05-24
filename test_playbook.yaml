@@ -18,8 +18,17 @@
         - include_role:
             name: test_pb_aos_blueprint_deploy
       rescue:
+        - name: Clean Up After Failure
+          debug:
+            msg: Failure detected, cleaning up and reseting environment"
         - include_role:
             name: test_clean_up_tests
         - name: Failure detected in test roles
           fail:
-            msg: "Failure detected in test roles, cleaning up and reset environment"
+            msg: "Failure: {{ansible_failed_task.name}}: {{ansible_failed_result}}"
+      always:
+        - include_role:
+            name: test_clean_up_tests
+        - name: Cleaning up test roles and resetting test enviroment
+          debug:
+            msg: "Cleaning up after the mess. Nothing to see here, move along."

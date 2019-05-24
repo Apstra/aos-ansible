@@ -47,7 +47,24 @@
     assert:
       that:
         - ippool|failed
-        - "'does not appear to be an IPv4 or IPv6 network' in ippool.msg"
+        - "'Invalid subnet: 192.168.359.0/24' in ippool.msg"
+
+  - name: test_create_new_empty_ipv4_pool
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      name: "my-blank-ip-pool"
+      state: present
+    register: ipblank
+
+  - name: check_test_create_new_empty_ipv4_pool
+    assert:
+      that:
+        - ipblank|success
+        - ipblank|changed
+        - ipblank.id == "my-blank-ip-pool"
+        - ipblank.name == "my-blank-ip-pool"
+        - ipblank.value.subnets == []
 
   - name: test_create_new_ipv4_pool
     local_action:
@@ -135,7 +152,7 @@
         - ippool|success
         - ippool|changed
         - ippool.id == "my-ip-pool"
-        - ippool.name == "my-ip-pool"
+        - ippool.name == ""
         - ippool.value == {}
 
   - name: test_create_new_ipv6_pool_invalid_subnet
@@ -153,8 +170,25 @@
     assert:
       that:
         - ip6pool|failed
-        - "'does not appear to be an IPv4 or IPv6 network' in ip6pool.msg"
+        - "'Invalid subnet: fe80:0:g:1::/64' in ip6pool.msg"
 
+  - name: test_create_new_empty_ipv6_pool
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      name: "my-blank-ipv6-pool"
+      state: present
+      ip_version: 6
+    register: ip6blank
+
+  - name: check_test_create_new_empty_ipv6_pool
+    assert:
+      that:
+        - ip6blank|success
+        - ip6blank|changed
+        - ip6blank.id == "my-blank-ipv6-pool"
+        - ip6blank.name == "my-blank-ipv6-pool"
+        - ip6blank.value.subnets == []
 
   - name: test_create_new_ipv6_pool
     local_action:
@@ -245,5 +279,5 @@
         - ip6pool|success
         - ip6pool|changed
         - ip6pool.id == "my-ipv6-pool"
-        - ip6pool.name == "my-ipv6-pool"
+        - ip6pool.name == ""
         - ip6pool.value == {}

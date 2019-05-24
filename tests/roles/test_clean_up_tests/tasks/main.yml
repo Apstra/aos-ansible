@@ -8,35 +8,35 @@
       port: 443
     run_once: true
 
-  - name: test_delete_asn_pool
+  - name: test_cleanup_delete_asn_pool
     local_action:
       module: aos_asn_pool
       session: "{{ aos_session }}"
-      name: "my-asn-pool"
+      name: "my-blank-asn-pool"
       state: absent
     register: asnpool
 
-  - name: test_delete_ipv4_pool
-    local_action:
-      module: aos_ip_pool
-      session: "{{ aos_session }}"
-      name: "my-ip-pool"
-      state: absent
-    register: ippool
-
-  - name: test_delete_ipv6_pool
-    local_action:
-      module: aos_ip_pool
-      session: "{{ aos_session }}"
-      id: "my-ipv6-pool"
-      state: absent
-      ip_version: 6
-    register: ip6pool
-
-  - name: test_delete_vni_pool
+  - name: test_cleanup_delete_vni_pool
     local_action:
       module: aos_vni_pool
       session: "{{ aos_session }}"
-      id: "my-vni-pool"
+      id: "my-blank-vni-pool"
       state: absent
     register: vnipool
+
+  - name: test_cleanup_delete_ipv4_pool
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      name: "my-blank-ip-pool"
+      state: absent
+    register: ippool
+
+  - name: test_cleanup_delete_ipv6_pool
+    local_action:
+      module: aos_ip_pool
+      session: "{{ aos_session }}"
+      id: "my-blank-ipv6-pool"
+      state: absent
+      ip_version: 6
+    register: ip6pool

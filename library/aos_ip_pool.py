@@ -128,169 +128,57 @@ value:
   sample: {'...'}
 '''
 
-import ipaddress
 from ansible.module_utils.basic import AnsibleModule
-from library.aos import aos_post, aos_put, aos_delete, find_resource_item
-
-V4_ENDPOINT = 'resources/ip-pools'
-V6_ENDPOINT = 'resources/ipv6-pools'
-
-
-def validate_subnets(module, subnets, addr_type):
-    """
-    Validate IP subnets provided are valid and properly formatted
-    :param module: Ansible built in
-    :param subnets: list
-    :param addr_type: int
-    :return: bool
-    """
-    for i, subnet in enumerate(subnets, 1):
-        try:
-            results = ipaddress.ip_network(subnet)
-            if results.version != addr_type:
-                module.fail_json(msg="Subnet {} does not match ip_version {} "
-                                     "configured for the pool "
-                                 .format(subnet, addr_type))
-
-        except ValueError as e:
-            module.fail_json(msg="Invalid subnet {}: {}"
-                             .format(subnet, e))
-
-    return True
-
-
-def get_subnets(pool):
-    """
-    convert IP pool list to dict format
-    :param pool: list
-    :return: dict
-    """
-    return [{"network": r} for r in pool]
-
-
-def ip_pool_absent(module, session, endpoint, my_pool):
-    """
-    Remove IP pool if exist and is not in use
-    :param module: Ansible built in
-    :param session: dict
-    :param endpoint: str
-    :param my_pool: dict
-    :return: dict
-    """
-    margs = module.params
-
-    # If the resource does not exist, return directly
-    if not my_pool:
-        module.exit_json(changed=False,
-                         name=margs['name'],
-                         id='',
-                         value={})
-
-    if my_pool['status'] != 'not_in_use':
-        module.fail_json(msg="Unable to delete IP Pool {}, currently"
-                             " in use".format(my_pool['display_name']))
-
-    if not module.check_mode:
-        aos_delete(session, endpoint, my_pool['id'])
-
-    module.exit_json(changed=True,
-                     name=my_pool['display_name'],
-                     id=my_pool['id'],
-                     value={})
-
-
-def ip_pool_present(module, session, endpoint, my_pool):
-    """
-    Create new IP pool or modify existing pool
-    :param module: Ansible built in
-    :param session: dict
-    :param endpoint: str
-    :param my_pool: dict
-    :return: dict
-    """
-    margs = module.params
-
-    if not my_pool:
-
-        if 'name' not in margs.keys():
-            module.fail_json(msg="name is required to create a new resource")
-
-        new_pool = {"subnets": get_subnets(margs['subnets']),
-                    "display_name": margs['name'],
-                    "id": margs['name']}
-
-        if not module.check_mode:
-            resp = aos_post(session, endpoint, new_pool)
-
-            module.exit_json(changed=True,
-                             name=new_pool['display_name'],
-                             id=resp['id'],
-                             value=new_pool)
-
-        module.exit_json(changed=False,
-                         name=new_pool['display_name'],
-                         id={},
-                         value={})
-
-    else:
-        if my_pool['subnets']:
-
-            endpoint_put = "{}/{}".format(endpoint, my_pool['id'])
-
-            new_pool = {"subnets": get_subnets(margs['subnets']),
-                        "display_name": my_pool['display_name'],
-                        "id": margs['name']}
-
-            for ip_subnet in my_pool['subnets']:
-                new_pool['subnets'].append({'network': ip_subnet['network']})
-
-            if not module.check_mode:
-                aos_put(session, endpoint_put, new_pool)
-
-                module.exit_json(changed=True,
-                                 name=new_pool['display_name'],
-                                 id=my_pool['id'],
-                                 value=new_pool)
-
-            module.exit_json(changed=False,
-                             name=new_pool['display_name'],
-                             id={},
-                             value={})
+from library.aos_resource import IpPool
 
 
 def ip_pool(module):
     """
-    Main function to create, change or delete AOS IP resource pool
+    Main function to create, change or delete AOS IP and IPv6 resource pool
     """
     margs = module.params
+    target_state = margs['state']
+    new_subnet = margs['subnets']
+    addr_type = margs['ip_version']
 
-    item_name = None
-    item_id = None
-
-    if margs['name'] is not None:
-        item_name = margs['name']
-
-    elif margs['id'] is not None:
-        item_id = margs['id']
+    pool = IpPool(module, margs['session'], addr_type, module.check_mode)
 
     if 'subnets' in margs.keys():
-        validate_subnets(module, margs['subnets'], margs['ip_version'])
+        errors = pool.validate(new_subnet)
 
-    if margs['ip_version'] == 6:
-        endpoint = V6_ENDPOINT
-    else:
-        endpoint = V4_ENDPOINT
+        if errors:
+            pool.module_exit(error=errors,
+                             name='', uuid='',
+                             value='', changed=False)
 
-    my_pool = find_resource_item(margs['session'],
-                                 endpoint,
-                                 resource_name=item_name,
-                                 resource_id=item_id)
+    new_subnets = pool.get_subnets(new_subnet)
 
-    if margs['state'] == 'absent':
-        ip_pool_absent(module, margs['session'], endpoint, my_pool)
+    existing = {}
 
-    elif margs['state'] == 'present':
-        ip_pool_present(module, margs['session'], endpoint, my_pool)
+    if margs['name'] is not None:
+        name = margs['name']
+        existing = pool.find_by_name(name)
+
+    if margs['id'] is not None:
+        uuid = margs['id']
+        existing = pool.find_by_id(uuid)
+
+    if target_state == 'present':
+        if not existing:
+            pool.create(new_subnets, margs['name'])
+        else:
+            pool.update(existing["display_name"],
+                        existing["id"],
+                        existing["subnets"],
+                        new_subnets)
+
+    elif target_state == "absent":
+        if not existing:
+            return pool.module_exit(error=[],
+                                    name='', uuid='',
+                                    value='', changed=False)
+
+        pool.delete(existing["id"])
 
 
 def main():

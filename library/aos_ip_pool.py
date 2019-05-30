@@ -145,7 +145,7 @@ def validate_subnets(subnets, addr_type):
     :return: bool
     """
     errors = []
-    for i, subnet in enumerate(subnets, 1):
+    for subnet in subnets:
         try:
             results = ipaddress.ip_network(subnet)
             if results.version != int(addr_type[3]):

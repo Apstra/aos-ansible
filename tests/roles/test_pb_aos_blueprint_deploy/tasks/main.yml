@@ -23,4 +23,4 @@
     assert:
       that:
         - bp_deploy|success
-        # - bp_deploy|changed == false
+        - bp_deploy.changed == false

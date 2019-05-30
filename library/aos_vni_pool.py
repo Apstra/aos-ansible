@@ -126,7 +126,7 @@ def validate_ranges(ranges):
     """
     errors = []
 
-    for i, vni_range in enumerate(ranges, 1):
+    for vni_range in ranges:
         if not isinstance(vni_range, list):
             errors.append("Invalid range: must be a list")
         elif len(vni_range) != 2:

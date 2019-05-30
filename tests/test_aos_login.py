@@ -1,5 +1,4 @@
 from ansible.compat.tests.mock import patch
-from nose.tools import assert_equals
 import library.aos_login as aos_login
 
 
@@ -41,4 +40,4 @@ def test_aos_login_success(mock_module, mock_aos_login):
 
     mock_aos_login.return_value = mock_session
     resp = aos_login.aos_login()
-    assert_equals(resp, mock_session)
+    assert resp == mock_session

@@ -8,35 +8,47 @@
       port: 443
     run_once: true
 
-  - name: test_cleanup_delete_asn_pool
+  - name: test_cleanup_delete_asn_pools
     local_action:
       module: aos_asn_pool
       session: "{{ aos_session }}"
-      name: "my-blank-asn-pool"
+      id: "{{item}}"
       state: absent
     register: asnpool
+    with_items:
+      - "my-asn-pool"
+      - "my-blank-asn-pool"
 
-  - name: test_cleanup_delete_vni_pool
+  - name: test_cleanup_delete_vni_pools
     local_action:
       module: aos_vni_pool
       session: "{{ aos_session }}"
-      id: "my-blank-vni-pool"
+      id: "{{item}}"
       state: absent
     register: vnipool
+    with_items:
+      - "my-vni-pool"
+      - "my-blank-vni-pool"
 
   - name: test_cleanup_delete_ipv4_pool
     local_action:
       module: aos_ip_pool
       session: "{{ aos_session }}"
-      name: "my-blank-ip-pool"
+      id: "{{item}}"
       state: absent
     register: ippool
+    with_items:
+      - "my-ip-pool"
+      - "my-blank-ip-pool"
 
   - name: test_cleanup_delete_ipv6_pool
     local_action:
       module: aos_ip_pool
       session: "{{ aos_session }}"
-      id: "my-blank-ipv6-pool"
+      id: "{{item}}"
       state: absent
-      ip_version: 6
+      ip_version: ipv6
     register: ip6pool
+    with_items:
+          - "my-ipv6-pool"
+          - "my-blank-ipv6-pool"

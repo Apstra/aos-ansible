@@ -104,6 +104,23 @@
         - vniblank.name == "my-blank-vni-pool"
         - vniblank.value.ranges == []
 
+  - name: test_create_new_vni_pool_exists
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      name: "my-blank-vni-pool"
+      state: present
+    register: vniblank
+
+  - name: check_test_create_new_vni_pool_exists
+    assert:
+      that:
+        - vniblank|success
+        - vniblank.changed == false
+        - vniblank.id == "my-blank-vni-pool"
+        - vniblank.name == "my-blank-vni-pool"
+        - vniblank.value.ranges == []
+
   - name: test_create_new_vni_pool
     local_action:
       module: aos_vni_pool
@@ -183,5 +200,3 @@
         - vnipool|success
         - vnipool|changed
         - vnipool.id == "my-vni-pool"
-        - vnipool.name == ""
-        - vnipool.value == {}

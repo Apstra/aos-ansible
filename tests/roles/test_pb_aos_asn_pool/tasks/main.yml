@@ -87,6 +87,23 @@
         - asnpool.name == "my-blank-asn-pool"
         - asnpool.value.ranges == []
 
+  - name: test_create_empty_asn_pool_exists
+    local_action:
+      module: aos_asn_pool
+      session: "{{ aos_session }}"
+      name: "my-blank-asn-pool"
+      state: present
+    register: asnpool
+
+  - name: check_test_create_new_blank_asn_pool_exists
+    assert:
+      that:
+        - asnpool|success
+        - asnpool.changed == false
+        - asnpool.id == "my-blank-asn-pool"
+        - asnpool.name == "my-blank-asn-pool"
+        - asnpool.value.ranges == []
+
   - name: test_create_new_asn_pool
     local_action:
       module: aos_asn_pool
@@ -166,5 +183,4 @@
         - asnpool|success
         - asnpool|changed
         - asnpool.id == "my-asn-pool"
-        - asnpool.name == ""
-        - asnpool.value == {}
+        - asnpool.name == "my-asn-pool"

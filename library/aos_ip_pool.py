@@ -81,9 +81,9 @@ EXAMPLES = '''
     subnets:
       - fe80:0:0:1::/64
       - fe80:0:0:2::/64
-    ip_version: 6
+    ip_version: ipv6
     state: present
-    register: ippool
+    register: ipv6_pool
 
 - name: "Update IP Pool by Name"
   aos_ip_pool:
@@ -91,6 +91,7 @@ EXAMPLES = '''
     name: "{{ ippool.name }}"
     subnets:
       - 192.168.100.0/24
+    ip_version: ipv4
     state: present
 
 - name: "Update IP Pool by ID"
@@ -128,57 +129,166 @@ value:
   sample: {'...'}
 '''
 
+import ipaddress
 from ansible.module_utils.basic import AnsibleModule
-from library.aos_resource import IpPool
+from library.aos import aos_post, aos_put, aos_delete, find_resource_item
+
+V4_ENDPOINT = 'resources/ip-pools'
+V6_ENDPOINT = 'resources/ipv6-pools'
+
+
+def validate_subnets(subnets, addr_type):
+    """
+    Validate IP subnets provided are valid and properly formatted
+    :param subnets: list
+    :param addr_type: str ('ipv4', 'ipv6')
+    :return: bool
+    """
+    errors = []
+    for i, subnet in enumerate(subnets, 1):
+        try:
+            results = ipaddress.ip_network(subnet)
+            if results.version != int(addr_type[3]):
+                errors.append("{} is not a valid {} subnet"
+                              .format(subnet, addr_type))
+
+        except ValueError:
+            errors.append("Invalid subnet: {}".format(subnet))
+
+    return errors
+
+
+def get_subnets(pool):
+    """
+    convert IP pool list to dict format
+    :param pool: list
+    :return: dict
+    """
+    return [{"network": r} for r in pool]
+
+
+def ip_pool_absent(module, session, endpoint, my_pool):
+    """
+    Remove IP pool if exist and is not in use
+    :param module: Ansible built in
+    :param session: dict
+    :param endpoint: str
+    :param my_pool: dict
+    :return: success(bool), changed(bool), results(dict)
+    """
+    if not my_pool:
+        return True, False, {'display_name': '',
+                             'id': '',
+                             'msg': 'Pool does not exist'}
+
+    if my_pool['status'] != 'not_in_use':
+        return False, False, {"status": "Unable to delete IP Pool {}, "
+                              "currently in use".format(my_pool['display_name'])}
+
+    if not module.check_mode:
+        aos_delete(session, endpoint, my_pool['id'])
+
+        return True, True, my_pool
+
+    return True, False, my_pool
+
+
+def ip_pool_present(module, session, endpoint, my_pool):
+    """
+    Create new IP pool or modify existing pool
+    :param module: Ansible built in
+    :param session: dict
+    :param endpoint: str
+    :param my_pool: dict
+    :return: success(bool), changed(bool), results(dict)
+    """
+    margs = module.params
+
+    if not my_pool:
+
+        if 'name' not in margs.keys():
+            return False, False, {"msg": "name required to create a new resource"}
+
+        new_pool = {"subnets": get_subnets(margs['subnets']),
+                    "display_name": margs['name'],
+                    "id": margs['name']}
+
+        if not module.check_mode:
+            aos_post(session, endpoint, new_pool)
+
+            return True, True, new_pool
+
+        return True, False, new_pool
+
+    else:
+        if my_pool['subnets']:
+
+            endpoint_put = "{}/{}".format(endpoint, my_pool['id'])
+
+            new_pool = {"subnets": get_subnets(margs['subnets']),
+                        "display_name": my_pool['display_name'],
+                        "id": margs['name']}
+
+            for ip_subnet in my_pool['subnets']:
+                new_pool['subnets'].append({'network': ip_subnet['network']})
+
+            if not module.check_mode:
+                aos_put(session, endpoint_put, new_pool)
+
+                return True, True, new_pool
+
+            return True, False, new_pool
+
+        return True, False, my_pool
 
 
 def ip_pool(module):
     """
-    Main function to create, change or delete AOS IP and IPv6 resource pool
+    Main function to create, change or delete AOS IP resource pool
     """
     margs = module.params
-    target_state = margs['state']
-    new_subnet = margs['subnets']
-    addr_type = margs['ip_version']
 
-    pool = IpPool(module, margs['session'], addr_type, module.check_mode)
-
-    if 'subnets' in margs.keys():
-        errors = pool.validate(new_subnet)
-
-        if errors:
-            pool.module_exit(error=errors,
-                             name='', uuid='',
-                             value='', changed=False)
-
-    new_subnets = pool.get_subnets(new_subnet)
-
-    existing = {}
+    name = None
+    uuid = None
 
     if margs['name'] is not None:
         name = margs['name']
-        existing = pool.find_by_name(name)
 
-    if margs['id'] is not None:
+    elif margs['id'] is not None:
         uuid = margs['id']
-        existing = pool.find_by_id(uuid)
 
-    if target_state == 'present':
-        if not existing:
-            pool.create(new_subnets, margs['name'])
-        else:
-            pool.update(existing["display_name"],
-                        existing["id"],
-                        existing["subnets"],
-                        new_subnets)
+    if 'subnets' in margs.keys():
+        errors = validate_subnets(margs['subnets'], margs['ip_version'])
 
-    elif target_state == "absent":
-        if not existing:
-            return pool.module_exit(error=[],
-                                    name='', uuid='',
-                                    value='', changed=False)
+        if errors:
+            module.fail_json(msg=errors)
 
-        pool.delete(existing["id"])
+    choice_map = {
+        "ipv4": V4_ENDPOINT,
+        "ipv6": V6_ENDPOINT
+    }
+
+    endpoint = choice_map.get(margs['ip_version'])
+    my_pool = find_resource_item(margs['session'], endpoint,
+                                 name=name, uuid=uuid)
+
+    if margs['state'] == 'absent':
+        success, changed, results = ip_pool_absent(module,
+                                                   margs['session'],
+                                                   endpoint,
+                                                   my_pool)
+
+    elif margs['state'] == 'present':
+        success, changed, results = ip_pool_present(module,
+                                                    margs['session'],
+                                                    endpoint,
+                                                    my_pool)
+
+    if success:
+        module.exit_json(changed=changed, name=results['display_name'],
+                         id=results['id'], value=results)
+    else:
+        module.fail_json(msg=results)
 
 
 def main():
@@ -195,9 +305,8 @@ def main():
                        default="present",),
             subnets=dict(required=False, type="list", default=[]),
             ip_version=dict(required=False,
-                            type="int",
-                            choices=[4, 6],
-                            default=4),
+                            choices=['ipv4', 'ipv6'],
+                            default='ipv4'),
         ),
         mutually_exclusive=[('name', 'id')],
         required_one_of=[('name', 'id')],

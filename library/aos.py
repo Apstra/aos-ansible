@@ -139,3 +139,39 @@ def aos_delete(session, endpoint, aos_id):
                                        verify=set_requests_verify())
 
     return requests_response(response)
+
+
+def _find_resource(resource_data, key, keyword):
+    for item in resource_data['items']:
+        if item[keyword] == key:
+            return item
+    return {}
+
+
+def find_resource_by_name(resource_data, name):
+    return _find_resource(resource_data, name, "display_name")
+
+
+def find_resource_by_id(resource_data, uuid):
+    return _find_resource(resource_data, uuid, "id")
+
+
+def find_resource_item(session, endpoint,
+                       name=None,
+                       uuid=None):
+    """
+    Find an existing resource based on name or id from a given endpoint
+    :param session: dict
+    :param endpoint: string
+    :param resource_name: string
+    :param resource_id: string
+    :return: Returns collection item (dict)
+    """
+    resource_data = aos_get(session, endpoint)
+
+    if name:
+        return find_resource_by_name(resource_data, name)
+    elif uuid:
+        return find_resource_by_id(resource_data, uuid)
+    else:
+        return {}

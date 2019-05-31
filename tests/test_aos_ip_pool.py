@@ -1,3 +1,5 @@
+# Copyright (c) 2017 Apstra Inc, <community@apstra.com>
+
 from ansible.compat.tests.mock import patch
 import library.aos_ip_pool as aos_ip_pool
 
@@ -43,7 +45,7 @@ def test_aos_ip_pool_success(mock_module, mock_aos_ip_pool):
                     "token": "bar"}
 
     mock_aos_ip_pool.return_value = mock_session
-    resp = aos_ip_pool.ip_pool()
+    resp = aos_ip_pool.ip_pool(mock_module)
     assert resp == mock_session
 
 

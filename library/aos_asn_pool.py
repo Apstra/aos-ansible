@@ -1,22 +1,5 @@
-#!/usr/bin/python
-#
 # (c) 2017 Apstra Inc, <community@apstra.com>
-#
-# This file is part of Ansible
-#
-# Ansible is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# Ansible is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with Ansible.  If not, see <http://www.gnu.org/licenses/>.
-#
+
 
 ANSIBLE_METADATA = {'metadata_version': '1.0',
                     'status': ['preview'],
@@ -30,8 +13,8 @@ author: Ryan Booth (@that1guy15)
 version_added: "2.7"
 short_description: Manage AOS ASN Pool
 description:
-  - Apstra AOS ASN Pool module lets you manage your ASN Pool easily. You can
-    create and delete ASN Pools by Name, ID or by using a JSON File. This
+  - Apstra AOS ASN Pool module lets you manage your ASN Pools easily. You can
+    create and delete ASN Pools by Name or ID. This
     module is idempotent and supports the I(check) mode.
     It's using the AOS REST API.
 options:
@@ -42,19 +25,14 @@ options:
   name:
     description:
       - Name of the ASN Pool to manage.
-        Only one of I(name), I(id) or I(content) can be set.
+        Only one of I(name) or I(id) can be set.
   id:
     description:
       - AOS Id of the ASN Pool to manage.
-        Only one of I(name), I(id) or I(content) can be set.
-  content:
-    description:
-      - Datastructure of the ASN Pool to manage. The data can be in YAML / JSON or
-        directly a variable. It's the same datastructure that is returned
-        on success in I(value).
+        Only one of I(name) or I(id)can be set.
   state:
     description:
-      - Indicate what is the expected state of the ASN Pool (present or not).
+      - Indicates the expected state of the ASN Pool (present or absent).
     default: present
     choices: ['present', 'absent']
   ranges:

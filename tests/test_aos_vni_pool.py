@@ -1,3 +1,5 @@
+# Copyright (c) 2017 Apstra Inc, <community@apstra.com>
+
 from ansible.compat.tests.mock import patch
 import library.aos_vni_pool as aos_vni_pool
 
@@ -34,7 +36,7 @@ def test_aos_vni_pool_success(mock_module, mock_aos_vni_pool):
                     "token": "bar"}
 
     mock_aos_vni_pool.return_value = mock_session
-    resp = aos_vni_pool.vni_pool()
+    resp = aos_vni_pool.vni_pool(mock_module)
     assert resp == mock_session
 
 

@@ -1,3 +1,5 @@
+# Copyright (c) 2017 Apstra Inc, <community@apstra.com>
+
 from ansible.compat.tests.mock import patch
 import library.aos_asn_pool as aos_asn_pool
 

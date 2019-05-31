@@ -1,3 +1,5 @@
+# Copyright (c) 2017 Apstra Inc, <community@apstra.com>
+
 from ansible.compat.tests.mock import patch
 import library.aos_login as aos_login
 
@@ -39,5 +41,5 @@ def test_aos_login_success(mock_module, mock_aos_login):
                     "token": "bar"}
 
     mock_aos_login.return_value = mock_session
-    resp = aos_login.aos_login()
+    resp = aos_login.aos_login(mock_module)
     assert resp == mock_session

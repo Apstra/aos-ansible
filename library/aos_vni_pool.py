@@ -8,13 +8,13 @@ ANSIBLE_METADATA = {'metadata_version': '1.0',
 
 DOCUMENTATION = '''
 ---
-module: aos_asn_pool
+module: aos_vni_pool
 author: Ryan Booth (@that1guy15)
 version_added: "2.7"
-short_description: Manage AOS ASN Pool
+short_description: Manage AOS VNI Pool
 description:
-  - Apstra AOS ASN Pool module lets you manage your ASN Pools easily. You can
-    create and delete ASN Pools by Name or ID. This
+  - Apstra AOS VNI Pool module lets you manage your VNI pools easily. You can
+    create and delete VNI Pools by Name, ID or by using a JSON File. This
     module is idempotent and supports the I(check) mode.
     It's using the AOS REST API.
 options:
@@ -24,66 +24,66 @@ options:
     required: true
   name:
     description:
-      - Name of the ASN Pool to manage.
-        Only one of I(name) or I(id) can be set.
+      - Name of the VNI Pool to manage.
+        Only one of I(name) or I(id)can be set.
   id:
     description:
-      - AOS Id of the ASN Pool to manage.
-        Only one of I(name) or I(id)can be set.
+      - AOS Id of the VNI Pool to manage.
+         Only one of I(name) or I(id)can be set.
   state:
     description:
-      - Indicates the expected state of the ASN Pool (present or absent).
+      - Indicates the expected state of the VNI Pool (present or absent).
     default: present
     choices: ['present', 'absent']
   ranges:
     description:
-      - List of ASNs ranges to add to the ASN Pool. Each range (list) must have
+      - List of VNIs ranges to add to the VNI Pool. Each range (list) must have
         2 values. A start of range and an end of range.
 '''
 
 EXAMPLES = '''
 
-- name: "Create ASN Pool"
-  aos_asn_pool:
+- name: "Create VNI Pool"
+  aos_vni_pool:
     session: "{{ aos_session }}"
-    name: "my-asn-pool"
+    name: "my-vni-pool"
     ranges:
       - [ 100, 200 ]
     state: present
-    register: asnpool
+    register: vnipool
 
-- name: "Update ASN Pool by Name"
-  aos_asn_pool:
+- name: "Update VNI Pool by Name"
+  aos_vni_pool:
     session: "{{ aos_session }}"
-    name: "{{ asnpool.name }}"
+    name: "{{ vnipool.name }}"
     ranges:
       - [ 300, 400 ]
     state: present
 
-- name: "Update ASN Pool by ID"
-  aos_asn_pool:
+- name: "Update VNI Pool by ID"
+  aos_vni_pool:
     session: "{{ aos_session }}"
-    id: "{{ asnpool.id }}"
+    id: "{{ vnipool.id }}"
     ranges:
       - [ 300, 400 ]
     state: present
 
-- name: "Delete ASN Pool"
-  aos_asn_pool:
+- name: "Delete VNI Pool"
+  aos_vni_pool:
     session: "{{ aos_session }}"
-    name: "my-asn-pool"
+    name: "my-vni-pool"
     state: absent
 '''
 
 RETURNS = '''
 name:
-  description: Name of the ASN Pool
+  description: Name of the VNI Pool
   returned: always
   type: str
-  sample: Private-ASN-pool
+  sample: Private-VNI-pool
 
 id:
-  description: AOS unique ID assigned to the ASN Pool
+  description: AOS unique ID assigned to the VNI Pool
   returned: always
   type: str
   sample: fcc4ac1c-e249-4fe7-b458-2138bfb44c06
@@ -98,42 +98,45 @@ value:
 from ansible.module_utils.basic import AnsibleModule
 from library.aos import aos_post, aos_put, aos_delete, find_resource_item
 
-ENDPOINT = 'resources/asn-pools'
+ENDPOINT = 'resources/vni-pools'
 
 
 def validate_ranges(ranges):
     """
-    Validate ASN ranges provided are valid and properly formatted
+    Validate VNI ranges provided are valid and properly formatted
     :param ranges: list
     :return: bool
     """
     errors = []
 
-    for asn_range in ranges:
-        if not isinstance(asn_range, list):
+    for vni_range in ranges:
+        if not isinstance(vni_range, list):
             errors.append("Invalid range: must be a list")
-        elif len(asn_range) != 2:
+        elif len(vni_range) != 2:
             errors.append("Invalid range: must be a list of 2 members")
-        elif any(map(lambda r: not isinstance(r, int), asn_range)):
+        elif any(map(lambda r: not isinstance(r, int), vni_range)):
             errors.append("Invalid range: Expected integer values")
-        elif asn_range[1] <= asn_range[0]:
+        elif vni_range[1] <= vni_range[0]:
             errors.append("Invalid range: 2nd element must be bigger than 1st")
+        elif vni_range[0] <= 4095 or vni_range[1] >= 16777213:
+            errors.append("Invalid range: must be a valid range between 4096"
+                          " and 16777214")
 
     return errors
 
 
 def get_ranges(pool):
     """
-    convert ASN pool list to dict format
+    convert VNI pool list to dict format
     :param pool: list
     :return: dict
     """
     return [{"first": r[0], "last": r[1]} for r in pool]
 
 
-def asn_pool_absent(module, session, my_pool):
+def vni_pool_absent(module, session, my_pool):
     """
-    Remove ASN pool if exist and is not in use
+    Remove VNI pool if exist and is not in use
     :param module: Ansible built in
     :param session: dict
     :param my_pool: dict
@@ -148,7 +151,7 @@ def asn_pool_absent(module, session, my_pool):
 
     if my_pool['status'] != 'not_in_use':
 
-        return False, False, {"msg": "Unable to delete ASN Pool {},"
+        return False, False, {"msg": "Unable to delete VNI Pool {},"
                               " currently in use".format(my_pool['display_name'])}
 
     if not module.check_mode:
@@ -159,9 +162,9 @@ def asn_pool_absent(module, session, my_pool):
     return True, False, my_pool
 
 
-def asn_pool_present(module, session, my_pool):
+def vni_pool_present(module, session, my_pool):
     """
-    Create new ASN pool or modify existing pool
+    Create new VNI pool or modify existing pool
     :param module: Ansible built in
     :param session: dict
     :param my_pool: dict
@@ -194,9 +197,9 @@ def asn_pool_present(module, session, my_pool):
                         "display_name": my_pool['display_name'],
                         "id": my_pool['id']}
 
-            for asn_range in my_pool['ranges']:
-                new_pool['ranges'].append({'first': asn_range['first'],
-                                           'last': asn_range['last']})
+            for vni_range in my_pool['ranges']:
+                new_pool['ranges'].append({'first': vni_range['first'],
+                                           'last': vni_range['last']})
 
             if not module.check_mode:
                 aos_put(session, endpoint_put, new_pool)
@@ -208,9 +211,9 @@ def asn_pool_present(module, session, my_pool):
         return True, False, my_pool
 
 
-def asn_pool(module):
+def vni_pool(module):
     """
-    Main function to create, change or delete AOS ASN resource pool
+    Main function to create, change or delete AOS VNI resource pool
     """
     margs = module.params
 
@@ -233,12 +236,12 @@ def asn_pool(module):
                                  name=name, uuid=uuid)
 
     if margs['state'] == 'absent':
-        success, changed, results = asn_pool_absent(module,
+        success, changed, results = vni_pool_absent(module,
                                                     margs['session'],
                                                     my_pool)
 
     elif margs['state'] == 'present':
-        success, changed, results = asn_pool_present(module,
+        success, changed, results = vni_pool_present(module,
                                                      margs['session'],
                                                      my_pool)
 
@@ -268,7 +271,7 @@ def main():
         supports_check_mode=True
     )
 
-    asn_pool(module)
+    vni_pool(module)
 
 
 if __name__ == "__main__":

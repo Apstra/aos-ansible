@@ -1,7 +1,7 @@
 .tox/
 venv/
 ENV/
-ansible.cfg
-inventory.ini
-test_playbook.yaml
 .idea/
+*.retry
+.cache/
+vault_pass.txt

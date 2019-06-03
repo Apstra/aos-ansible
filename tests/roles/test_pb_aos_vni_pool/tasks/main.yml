@@ -1,0 +1,202 @@
+
+  - set_fact:
+      vni_pool1:
+        first: 4096
+        last: 4200
+      vni_pool2:
+        first: 5510
+        last: 5520
+      vni_pool3:
+        first: 5600
+        last: 5700
+
+  - name: Create a session with the AOS-server
+    local_action:
+      module: aos_login
+      server: "{{ ansible_ssh_host }}"
+      user: "{{ ansible_ssh_user }}"
+      passwd: "{{ ansible_ssh_pass }}"
+      port: 443
+    run_once: true
+
+  - name: test_create_new_vni_pool_invalid_type
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      name: "my-vni-pool"
+      ranges:
+        - [ 4200, 'test1' ]
+      state: present
+    register: vnipool
+    ignore_errors: True
+
+  - name: check_test_create_new_vni_pool_invalid
+    assert:
+      that:
+        - vnipool|failed
+        - "'Invalid range: Expected integer values' in vnipool.msg"
+
+  - name: test_create_new_vni_pool_invalid_extra
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      name: "my-vni-pool"
+      ranges:
+        - [ 4096, 4200, 4300 ]
+      state: present
+    register: vnipool
+    ignore_errors: True
+
+  - name: check_test_create_new_vni_pool_invalid
+    assert:
+      that:
+        - vnipool|failed
+        - "'Invalid range: must be a list of 2 members' in vnipool.msg"
+
+  - name: test_create_new_vni_pool_invalid_order
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      name: "my-vni-pool"
+      ranges:
+        - [ 4200, 4096 ]
+      state: present
+    register: vnipool
+    ignore_errors: True
+
+  - name: check_test_create_new_vni_pool_invalid
+    assert:
+      that:
+        - vnipool|failed
+        - "'Invalid range: 2nd element must be bigger than 1st' in vnipool.msg"
+
+  - name: test_create_new_vni_pool_invalid_range
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      name: "my-vni-pool"
+      ranges:
+        - [ 111, 222 ]
+      state: present
+    register: vnipool
+    ignore_errors: True
+
+  - name: check_test_create_new_vni_pool_invalid
+    assert:
+      that:
+        - vnipool|failed
+        - "'Invalid range: must be a valid range between 4096 and 16777214' in vnipool.msg"
+
+  - name: test_create_new_empty_vni_pool
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      name: "my-blank-vni-pool"
+      state: present
+    register: vniblank
+
+  - name: check_test_create_new_empty_vni_pool
+    assert:
+      that:
+        - vniblank|success
+        - vniblank|changed
+        - vniblank.id == "my-blank-vni-pool"
+        - vniblank.name == "my-blank-vni-pool"
+        - vniblank.value.ranges == []
+
+  - name: test_create_new_vni_pool_exists
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      name: "my-blank-vni-pool"
+      state: present
+    register: vniblank
+
+  - name: check_test_create_new_vni_pool_exists
+    assert:
+      that:
+        - vniblank|success
+        - vniblank.changed == false
+        - vniblank.id == "my-blank-vni-pool"
+        - vniblank.name == "my-blank-vni-pool"
+        - vniblank.value.ranges == []
+
+  - name: test_create_new_vni_pool
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      name: "my-vni-pool"
+      ranges:
+        - [ 4096, 4200 ]
+      state: present
+    register: vnipool
+
+  - name: check_test_create_new_vni_pool
+    assert:
+      that:
+        - vnipool|success
+        - vnipool|changed
+        - vnipool.id == "my-vni-pool"
+        - vnipool.name == "my-vni-pool"
+        - vnipool.value.ranges == [vni_pool1]
+
+  - name: test_update_vni_pool_by_name
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      name: "{{ vnipool.name }}"
+      ranges:
+        - [ 5510, 5520 ]
+      state: present
+    register: vnipool
+
+  - name: check_test_update_vni_pool_by_name
+    assert:
+      that:
+        - vnipool|success
+        - vnipool|changed
+        - vnipool.id == "my-vni-pool"
+        - vnipool.name == "my-vni-pool"
+        - vnipool.value.ranges == vni_pool_range
+    vars:
+      vni_pool_range:
+        - "{{vni_pool2}}"
+        - "{{vni_pool1}}"
+
+  - name: test_update_vni_pool_by_id
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      id: "{{ vnipool.id }}"
+      ranges:
+        - [ 5600, 5700 ]
+      state: present
+    register: vnipool
+
+  - name: check_test_update_vni_pool_by_id
+    assert:
+      that:
+        - vnipool|success
+        - vnipool|changed
+        - vnipool.id == "my-vni-pool"
+        - vnipool.value.ranges == vni_pool_range
+    vars:
+      vni_pool_range:
+        - "{{vni_pool3}}"
+        - "{{vni_pool1}}"
+        - "{{vni_pool2}}"
+
+  - name: test_delete_vni_pool
+    local_action:
+      module: aos_vni_pool
+      session: "{{ aos_session }}"
+      id: "{{ vnipool.id }}"
+      state: absent
+    register: vnipool
+
+  - name: check_test_delete_vni_pool
+    assert:
+      that:
+        - vnipool|success
+        - vnipool|changed
+        - vnipool.id == "my-vni-pool"

@@ -1,3 +1,5 @@
+# Copyright (c) 2017 Apstra Inc, <community@apstra.com>
+
 import mock
 import library.aos_blueprint_deploy as aos_blueprint_deploy
 

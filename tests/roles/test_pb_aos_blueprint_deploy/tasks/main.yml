@@ -1,0 +1,26 @@
+
+  - name: Display Hostname
+    debug:
+      msg: "{{ ansible_ssh_pass  }}"
+
+  - name: Create a session with the AOS-server
+    local_action:
+      module: aos_login
+      server: "{{ ansible_ssh_host }}"
+      user: "{{ ansible_ssh_user }}"
+      passwd: "{{ ansible_ssh_pass }}"
+      port: 443
+    run_once: true
+
+  - name: test_deploy_vpod-evpn_blueprint
+    local_action:
+      module: aos_blueprint_deploy
+      session: "{{ aos_session }}"
+      name: "vpod-evpn"
+    register: bp_deploy
+
+  - name: check_test_deploy_vpod-evpn_blueprint
+    assert:
+      that:
+        - bp_deploy|success
+        - bp_deploy.changed == false

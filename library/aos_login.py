@@ -24,18 +24,25 @@ options:
     description:
       - Address of the AOS Server on which you want to open a connection.
     required: true
+    type: str
   port:
     description:
       - Port number to use when connecting to the AOS server.
     default: 443
+    required: false
+    type: int
   user:
     description:
       - Login username to use when connecting to the AOS server.
     default: admin
+    required: false
+    type: str
   passwd:
     description:
       - Password to use when connecting to the AOS server.
     default: admin
+    required: false
+    type: str
 '''
 
 EXAMPLES = '''

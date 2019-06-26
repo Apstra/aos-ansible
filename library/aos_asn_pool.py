@@ -22,23 +22,32 @@ options:
     description:
       - An existing AOS session as obtained by M(aos_login) module.
     required: true
+    type: dict
   name:
     description:
       - Name of the ASN Pool to manage.
         Only one of I(name) or I(id) can be set.
+    required: false
+    type: str
   id:
     description:
       - AOS Id of the ASN Pool to manage.
         Only one of I(name) or I(id)can be set.
+    required: false
+    type: str
   state:
     description:
       - Indicates the expected state of the ASN Pool (present or absent).
     default: present
     choices: ['present', 'absent']
+    required: false
+    type: str
   ranges:
     description:
       - List of ASNs ranges to add to the ASN Pool. Each range (list) must have
         2 values. A start of range and an end of range.
+    required: false
+    type: str
 '''
 
 EXAMPLES = '''

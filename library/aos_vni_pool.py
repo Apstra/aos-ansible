@@ -22,23 +22,32 @@ options:
     description:
       - An existing AOS session as obtained by M(aos_login) module.
     required: true
+    type: dict
   name:
     description:
       - Name of the VNI Pool to manage.
         Only one of I(name) or I(id)can be set.
+    required: false
+    type: str    
   id:
     description:
       - AOS Id of the VNI Pool to manage.
          Only one of I(name) or I(id)can be set.
+    required: false
+    type: str     
   state:
     description:
       - Indicates the expected state of the VNI Pool (present or absent).
     default: present
     choices: ['present', 'absent']
+    required: false
+    type: str
   ranges:
     description:
       - List of VNIs ranges to add to the VNI Pool. Each range (list) must have
         2 values. A start of range and an end of range.
+    required: false
+    type: list    
 '''
 
 EXAMPLES = '''
@@ -105,7 +114,7 @@ def validate_ranges(ranges):
     """
     Validate VNI ranges provided are valid and properly formatted
     :param ranges: list
-    :return: bool
+    :return: list
     """
     errors = []
 

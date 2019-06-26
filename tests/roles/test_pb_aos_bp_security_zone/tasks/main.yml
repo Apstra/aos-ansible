@@ -1,0 +1,217 @@
+
+  - name: Create a session with the AOS-server
+    local_action:
+      module: aos_login
+      server: "{{ ansible_ssh_host }}"
+      user: "{{ ansible_ssh_user }}"
+      passwd: "{{ ansible_ssh_pass }}"
+      port: 443
+    run_once: true
+
+  - name: Get Blueprints from AOS
+    local_action:
+      module: uri
+      url: "https://{{ aos_session.server }}/api/blueprints"
+      method: GET
+      status_code: 200
+      validate_certs: no
+      headers:
+        Content-Type: 'application/json'
+        Accept: 'application/json'
+        AUTHTOKEN: "{{ aos_session.token }}"
+      body_format: json
+    register: bps
+    run_once: true
+
+  - name: "Find Id for Blueprint vpod-evpn"
+    set_fact:
+      bp_id: "{{ item }}"
+    with_items: "{{ bps|json_query(jquery_bp) }}"
+    run_once: true
+    vars:
+      jquery_bp: "json.items[?label=='vpod-evpn'].id"
+
+  - name: test_create_new_sec_zone_vni_invalid_type
+    local_action:
+      module: aos_blueprint_security_zone
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-sec-zone"
+      vlan_id: 100
+      vni_id: 'test1'
+      state: present
+    register: seczone
+    ignore_errors: True
+
+  - name: check_test_create_new_sec_zone_vni_invalid_type
+    assert:
+      that:
+        - seczone|failed
+        - "'Invalid ID: must be an integer' in seczone.msg"
+
+  - name: test_create_new_sec_zone_vni_invalid_range
+    local_action:
+      module: aos_blueprint_security_zone
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-sec-zone"
+      vlan_id: 100
+      vni_id: 4094
+      state: present
+    register: seczone
+    ignore_errors: True
+
+  - name: check_test_create_new_sec_zone_vni_invalid_range
+    assert:
+      that:
+        - seczone|failed
+        - "'Invalid ID: must be a valid VNI number between 4096 and 16777214' in seczone.msg"
+
+  - name: test_create_new_sec_zone_vlan_invalid_type
+    local_action:
+      module: aos_blueprint_security_zone
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-sec-zone"
+      vlan_id: 'test1'
+      vni_id: 4096
+      state: present
+    register: seczone
+    ignore_errors: True
+
+  - name: check_test_create_new_sec_zone_vlan_invalid_type
+    assert:
+      that:
+        - seczone|failed
+        - "'Invalid ID: must be an integer' in seczone.msg"
+
+  - name: test_create_new_sec_zone_vlan_invalid_range
+    local_action:
+      module: aos_blueprint_security_zone
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-sec-zone"
+      vlan_id: 5000
+      vni_id: 4096
+      state: present
+    register: seczone
+    ignore_errors: True
+
+  - name: check_test_create_new_sec_zone_vlan_invalid_range
+    assert:
+      that:
+        - seczone|failed
+        - "'Invalid ID: must be a valid vlan id between 1 and 4094' in seczone.msg"
+
+  - name: test_create_new_sec_zone_base
+    local_action:
+      module: aos_blueprint_security_zone
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-sec-zone"
+      state: present
+    register: seczone
+
+  - name: check_test_create_new_sec_zone_base
+    assert:
+      that:
+        - seczone|success
+        - seczone|changed
+        - seczone.name == "my-sec-zone"
+        - seczone.value.vrf_name == "my-sec-zone"
+        - seczone.value.sz_type == "evpn"
+
+  - name: test_create_new_sec_zone_static
+    local_action:
+      module: aos_blueprint_security_zone
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-sec-zone2"
+      vlan_id: 4000
+      vni_id: 4096
+      state: present
+    register: seczone2
+
+  - name: check_test_create_new_sec_zone_static
+    assert:
+      that:
+        - seczone2|success
+        - seczone2|changed
+        - seczone2.name == "my-sec-zone2"
+        - seczone2.value.vrf_name == "my-sec-zone2"
+        - seczone2.value.vlan_id == 4000
+        - seczone2.value.vni_id == 4096
+
+  - name: test_create_new_sec_zone_exists
+    local_action:
+      module: aos_blueprint_security_zone
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-sec-zone"
+      state: present
+    register: seczone
+
+  - name: check_test_create_new_sec_zone_exists
+    assert:
+      that:
+        - seczone|success
+        - seczone.changed == false
+        - seczone.name == "my-sec-zone"
+
+  - name: test_update_sec_zone_by_name
+    local_action:
+      module: aos_blueprint_security_zone
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "{{ seczone.name }}"
+      vlan_id: 4001
+      vni_id: 5000
+      state: present
+    register: new_seczone
+
+  - name: check_test_update_sec_zone_by_name
+    assert:
+      that:
+        - new_seczone|success
+        - new_seczone|changed
+        - new_seczone.name == "my-sec-zone"
+        - new_seczone.value.vrf_name == "my-sec-zone"
+        - new_seczone.value.vlan_id == 4001
+        - new_seczone.value.vni_id == 5000
+
+  - name: test_update_sec_zone_by_id
+    local_action:
+      module: aos_blueprint_security_zone
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      id: "{{ seczone.id }}"
+      vlan_id: 4002
+      vni_id: 5010
+      state: present
+    register: new_seczone
+
+  - name: check_test_update_sec_zone_by_id
+    assert:
+      that:
+        - new_seczone|success
+        - new_seczone|changed
+        - new_seczone.name == "my-sec-zone"
+        - new_seczone.value.vrf_name == "my-sec-zone"
+        - new_seczone.value.vlan_id == 4002
+        - new_seczone.value.vni_id == 5010
+
+  - name: test_delete_sec_zone
+    local_action:
+      module: aos_blueprint_security_zone
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      id: "{{ seczone.id }}"
+      state: absent
+    register: seczone
+
+  - name: check_test_delete_sec_zone
+    assert:
+      that:
+        - seczone|success
+        - seczone|changed
+        - seczone.name == "my-sec-zone"

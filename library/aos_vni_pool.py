@@ -28,13 +28,13 @@ options:
       - Name of the VNI Pool to manage.
         Only one of I(name) or I(id)can be set.
     required: false
-    type: str    
+    type: str
   id:
     description:
       - AOS Id of the VNI Pool to manage.
          Only one of I(name) or I(id)can be set.
     required: false
-    type: str     
+    type: str
   state:
     description:
       - Indicates the expected state of the VNI Pool (present or absent).
@@ -47,7 +47,7 @@ options:
       - List of VNIs ranges to add to the VNI Pool. Each range (list) must have
         2 values. A start of range and an end of range.
     required: false
-    type: list    
+    type: list
 '''
 
 EXAMPLES = '''

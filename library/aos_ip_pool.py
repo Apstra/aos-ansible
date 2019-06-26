@@ -28,13 +28,13 @@ options:
       - Name of the IP Pool to manage.
         Only one of I(name) or I(id) can be set.
     required: false
-    type: str    
+    type: str
   id:
     description:
       - AOS Id of the IP Pool to manage.
         Only one of I(name) or I(id) can be set.
     required: false
-    type: str    
+    type: str
   state:
     description:
       - Indicates the expected state of the IP Pool (present or absent).

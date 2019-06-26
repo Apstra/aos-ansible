@@ -11,8 +11,8 @@ author: ryan@apstra.com (@that1guy15)
 version_added: "2.7"
 short_description: Manage security-zones within an AOS blueprint
 description:
-  - Create, update and manage security-zones within an existing AOS 
-    blueprint. 
+  - Create, update and manage security-zones within an existing AOS
+    blueprint.
 options:
   session:
     description:
@@ -40,7 +40,7 @@ options:
     default: present
     choices: ['present', 'absent']
     required: false
-    type: str  
+    type: str
   vni_id:
     description:
       - VNI ID number used by security-zone.
@@ -55,7 +55,7 @@ options:
     type: int
   routing_policy:
     description:
-      - Import and export policies along with aggregate and 
+      - Import and export policies along with aggregate and
         extra prefix definition
     required: false
     type: dict

@@ -70,7 +70,7 @@ EXAMPLES = '''
     name: "my-sec-zone"
     state: present
   register: seczone
-  
+
 - name: Create new Security Zone static VNI
   aos_blueprint_security_zone
     session: "{{ aos_session }}"
@@ -79,7 +79,7 @@ EXAMPLES = '''
     vni_id: 4096
     state: present
   register: seczone
-  
+
 - name: Delete Security Zone
   aos_blueprint_security_zone
     session: "{{ aos_session }}"

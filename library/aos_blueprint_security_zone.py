@@ -63,11 +63,29 @@ options:
 
 EXAMPLES = '''
 
-- name: Deploy Blueprint DC1-EVPN by name
-  aos_blueprint_deploy:
+- name: Create new Security Zone
+  aos_blueprint_security_zone
     session: "{{ aos_session }}"
-    name: 'DC1-EVPN'
-
+    blueprint_id: "{{bp_id}}"
+    name: "my-sec-zone"
+    state: present
+  register: seczone
+  
+- name: Create new Security Zone static VNI
+  aos_blueprint_security_zone
+    session: "{{ aos_session }}"
+    blueprint_id: "{{bp_id}}"
+    name: "my-sec-zone"
+    vni_id: 4096
+    state: present
+  register: seczone
+  
+- name: Delete Security Zone
+  aos_blueprint_security_zone
+    session: "{{ aos_session }}"
+    blueprint_id: "{{bp_id}}"
+    id: {{seczone.id}}
+    state: absent
 '''
 
 RETURNS = '''

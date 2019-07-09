@@ -134,7 +134,7 @@ def validate_vlan_id(vlan_id):
     :return: list
     """
     errors = []
-    if vlan_id <= 1 or vlan_id > 4094:
+    if vlan_id < 1 or vlan_id > 4094:
         errors.append("Invalid ID: must be a valid vlan id between 1"
                       " and 4094")
 

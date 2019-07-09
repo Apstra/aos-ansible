@@ -52,3 +52,14 @@
     with_items:
           - "my-ipv6-pool"
           - "my-blank-ipv6-pool"
+
+  - name: test_cleanup_delete_sec_zone
+    local_action:
+      module: aos_blueprint_security_zone
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      id: "{{item}}"
+      state: absent
+    register: seczone
+    with_items:
+          - "{{seczone2.id}}"

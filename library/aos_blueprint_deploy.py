@@ -1,7 +1,5 @@
 # (c) 2017 Apstra Inc, <community@apstra.com>
 
-#
-
 ANSIBLE_METADATA = {'metadata_version': '1.0',
                     'status': ['preview'],
                     'supported_by': 'community'}
@@ -20,14 +18,18 @@ options:
     description:
       - Session details from aos_login generated session.
     required: true
+    required: false
+    type: dict
   name:
     description:
       -Name of blueprint, as defined by AOS when created.
-    required: Np
+    required: false
+    type: str
   id:
     description:
       - ID of blueprint, as defined by AOS when created.
-    required: No
+    required: false
+    type: str
 '''
 
 EXAMPLES = '''

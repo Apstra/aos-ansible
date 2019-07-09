@@ -109,7 +109,7 @@ def aos_delete(session, endpoint, aos_id):
                                        headers=headers,
                                        verify=set_requests_verify())
 
-    return requests_response(response)
+    return response
 
 
 def _find_resource(resource_data, key, keyword):
@@ -134,8 +134,8 @@ def find_resource_item(session, endpoint,
     Find an existing resource based on name or id from a given endpoint
     :param session: dict
     :param endpoint: string
-    :param resource_name: string
-    :param resource_id: string
+    :param name: string
+    :param uuid: string
     :return: Returns collection item (dict)
     """
     resource_data = aos_get(session, endpoint)

@@ -22,28 +22,39 @@ options:
     description:
       - An existing AOS session as obtained by M(aos_login) module.
     required: true
+    type: dict
   name:
     description:
       - Name of the IP Pool to manage.
         Only one of I(name) or I(id) can be set.
+    required: false
+    type: str
   id:
     description:
       - AOS Id of the IP Pool to manage.
         Only one of I(name) or I(id) can be set.
+    required: false
+    type: str
   state:
     description:
       - Indicates the expected state of the IP Pool (present or absent).
     default: present
     choices: ['present', 'absent']
+    required: false
+    type: str
   subnets:
     description:
       - List of IP subnets to add to the IP Pool. Each subnet (list) must be
         given in valid CIDR notation. ex 192.168.59.0/24 or 2005::0/64. All
         subnets given must be of the same type defined with 'ip_version'
+    required: false
+    type: list
   ip_version:
     description:
       - IPv4 ('ipv4') or IPv6 ('ipv6') address type of the subnets being added.
     default: 'ipv4'
+    required: false
+    type: str
 '''
 
 EXAMPLES = '''

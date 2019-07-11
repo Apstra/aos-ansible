@@ -108,37 +108,10 @@ value:
 
 
 from ansible.module_utils.basic import AnsibleModule
-from library.aos import aos_get, aos_post, aos_put, aos_delete
+from library.aos import aos_get, aos_post, aos_put, aos_delete, validate_vni_id, \
+    validate_vlan_id
 
 ENDPOINT = 'security-zones'
-
-
-def validate_vni_id(vni_id):
-    """
-    Validate VNI ID provided is an acceptable value
-    :param vni_id: int
-    :return: list
-    """
-    errors = []
-    if vni_id <= 4095 or vni_id >= 16777213:
-        errors.append("Invalid ID: must be a valid VNI number between 4096"
-                      " and 16777214")
-
-    return errors
-
-
-def validate_vlan_id(vlan_id):
-    """
-    Validate VLAN ID provided is an acceptable value
-    :param vlan_id: int
-    :return: list
-    """
-    errors = []
-    if vlan_id < 1 or vlan_id > 4094:
-        errors.append("Invalid ID: must be a valid vlan id between 1"
-                      " and 4094")
-
-    return errors
 
 
 def sec_zone_absent(module, session, endpoint, my_sz):

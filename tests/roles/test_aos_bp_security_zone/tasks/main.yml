@@ -33,7 +33,7 @@
 
   - name: test_create_new_sec_zone_vni_invalid_type
     local_action:
-      module: aos_blueprint_security_zone
+      module: aos_bp_security_zone
       session: "{{ aos_session }}"
       blueprint_id: "{{bp_id}}"
       name: "my-sec-zone"
@@ -51,7 +51,7 @@
 
   - name: test_create_new_sec_zone_vni_invalid_range
     local_action:
-      module: aos_blueprint_security_zone
+      module: aos_bp_security_zone
       session: "{{ aos_session }}"
       blueprint_id: "{{bp_id}}"
       name: "my-sec-zone"
@@ -69,7 +69,7 @@
 
   - name: test_create_new_sec_zone_vlan_invalid_type
     local_action:
-      module: aos_blueprint_security_zone
+      module: aos_bp_security_zone
       session: "{{ aos_session }}"
       blueprint_id: "{{bp_id}}"
       name: "my-sec-zone"
@@ -87,7 +87,7 @@
 
   - name: test_create_new_sec_zone_vlan_invalid_range
     local_action:
-      module: aos_blueprint_security_zone
+      module: aos_bp_security_zone
       session: "{{ aos_session }}"
       blueprint_id: "{{bp_id}}"
       name: "my-sec-zone"
@@ -105,7 +105,7 @@
 
   - name: test_create_new_sec_zone_base
     local_action:
-      module: aos_blueprint_security_zone
+      module: aos_bp_security_zone
       session: "{{ aos_session }}"
       blueprint_id: "{{bp_id}}"
       name: "my-sec-zone"
@@ -123,7 +123,7 @@
 
   - name: test_create_new_sec_zone_static
     local_action:
-      module: aos_blueprint_security_zone
+      module: aos_bp_security_zone
       session: "{{ aos_session }}"
       blueprint_id: "{{bp_id}}"
       name: "my-sec-zone2"
@@ -144,7 +144,7 @@
 
   - name: test_create_new_sec_zone_exists
     local_action:
-      module: aos_blueprint_security_zone
+      module: aos_bp_security_zone
       session: "{{ aos_session }}"
       blueprint_id: "{{bp_id}}"
       name: "my-sec-zone"
@@ -160,7 +160,7 @@
 
   - name: test_update_sec_zone_by_name
     local_action:
-      module: aos_blueprint_security_zone
+      module: aos_bp_security_zone
       session: "{{ aos_session }}"
       blueprint_id: "{{bp_id}}"
       name: "{{ seczone.name }}"
@@ -181,7 +181,7 @@
 
   - name: test_update_sec_zone_by_id
     local_action:
-      module: aos_blueprint_security_zone
+      module: aos_bp_security_zone
       session: "{{ aos_session }}"
       blueprint_id: "{{bp_id}}"
       id: "{{ seczone.id }}"
@@ -202,7 +202,7 @@
 
   - name: test_delete_sec_zone
     local_action:
-      module: aos_blueprint_security_zone
+      module: aos_bp_security_zone
       session: "{{ aos_session }}"
       blueprint_id: "{{bp_id}}"
       id: "{{ seczone.id }}"

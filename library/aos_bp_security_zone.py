@@ -6,7 +6,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.0',
 
 DOCUMENTATION = '''
 ---
-module: aos_blueprint_security_zone
+module: aos_bp_security_zone
 author: ryan@apstra.com (@that1guy15)
 version_added: "2.7"
 short_description: Manage security-zones within an AOS blueprint
@@ -64,7 +64,7 @@ options:
 EXAMPLES = '''
 
 - name: Create new Security Zone
-  aos_blueprint_security_zone
+  aos_bp_security_zone
     session: "{{ aos_session }}"
     blueprint_id: "{{bp_id}}"
     name: "my-sec-zone"
@@ -72,7 +72,7 @@ EXAMPLES = '''
   register: seczone
 
 - name: Create new Security Zone static VNI
-  aos_blueprint_security_zone
+  aos_bp_security_zone
     session: "{{ aos_session }}"
     blueprint_id: "{{bp_id}}"
     name: "my-sec-zone"
@@ -81,7 +81,7 @@ EXAMPLES = '''
   register: seczone
 
 - name: Delete Security Zone
-  aos_blueprint_security_zone
+  aos_bp_security_zone
     session: "{{ aos_session }}"
     blueprint_id: "{{bp_id}}"
     id: {{seczone.id}}
@@ -116,15 +116,15 @@ ENDPOINT = 'security-zones'
 
 def sec_zone_absent(module, session, endpoint, my_sz):
     """
-        Remove security-zone if exist and is not in use
-        :param module: Ansible built in
-        :param session: dict
-        :param endpoint: str
-        :param my_sz: dict
-        :return: success(bool), changed(bool), results(dict)
-        """
+    Remove security-zone if exist and is not in use
+    :param module: Ansible built in
+    :param session: dict
+    :param endpoint: str
+    :param my_sz: dict
+    :return: success(bool), changed(bool), results(dict)
+    """
     if not my_sz:
-        return True, False, {'display_name': '',
+        return True, False, {'label': '',
                              'id': '',
                              'msg': 'security-zone does not exist'}
 
@@ -138,15 +138,15 @@ def sec_zone_absent(module, session, endpoint, my_sz):
 
 def sec_zone_present(module, session, endpoint, my_sz, vni_id, vlan_id):
     """
-        Create new security-zone or modify existing pool
-        :param module: Ansible built in
-        :param session: dict
-        :param endpoint: str
-        :param my_sz: dict
-        :param vni_id: int
-        :param vlan_id: int
-        :return: success(bool), changed(bool), results(dict)
-        """
+    Create new security-zone or modify existing pool
+    :param module: Ansible built in
+    :param session: dict
+    :param endpoint: str
+    :param my_sz: dict
+    :param vni_id: int
+    :param vlan_id: int
+    :return: success(bool), changed(bool), results(dict)
+    """
     margs = module.params
 
     if not my_sz:

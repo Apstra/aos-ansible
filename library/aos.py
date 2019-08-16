@@ -149,6 +149,32 @@ def find_resource_item(session, endpoint,
         return {}
 
 
+def find_bp_system_nodes(session, blueprint_id, nodes=None):
+    """
+    Find the Blueprint node ID for all nodes or the given device names
+    :param session: dict
+    :param blueprint_id: string
+    :param nodes: list
+    :return: list
+    """
+    endpoint = "blueprints/{}/ql".format(blueprint_id)
+    device_query = {'query': "{ system_nodes{id, label, role} }"}
+
+    node_data = aos_post(session, endpoint, device_query)
+
+    resp_nodes = []
+
+    if nodes:
+        for n in node_data['data']['system_nodes']:
+            if n['label'] in nodes:
+                resp_nodes.append(n)
+
+        return resp_nodes
+
+    else:
+        return node_data['data']['system_nodes']
+
+
 def validate_vni_id(vni_id):
     """
     Validate VNI ID provided is an acceptable value
@@ -222,22 +248,22 @@ def validate_vni_ranges(ranges):
     return errors
 
 
-def validate_subnets(subnets, addr_type):
+def validate_ip_format(addrs, ip_version):
     """
-    Validate IP subnets provided are valid and properly formatted
-    :param subnets: list
-    :param addr_type: str ('ipv4', 'ipv6')
+    Validate IP addresses or subnets provided
+    :param addrs: list
+    :param ip_version: str ('ipv4', 'ipv6')
     :return: bool
     """
     errors = []
-    for subnet in subnets:
+    for addr in addrs:
         try:
-            results = ipaddress.ip_network(subnet)
-            if results.version != int(addr_type[3]):
-                errors.append("{} is not a valid {} subnet"
-                              .format(subnet, addr_type))
+            results = ipaddress.ip_network(addr)
+            if results.version != int(ip_version[3]):
+                errors.append("{} is not a valid {} address or subnet"
+                              .format(addr, ip_version))
 
         except ValueError:
-            errors.append("Invalid subnet: {}".format(subnet))
+            errors.append("Invalid format: {}".format(addrs))
 
     return errors

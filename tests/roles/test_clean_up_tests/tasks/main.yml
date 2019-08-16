@@ -8,6 +8,29 @@
       port: 443
     run_once: true
 
+  - name: Get Blueprints from AOS
+    local_action:
+      module: uri
+      url: "https://{{ aos_session.server }}/api/blueprints"
+      method: GET
+      status_code: 200
+      validate_certs: no
+      headers:
+        Content-Type: 'application/json'
+        Accept: 'application/json'
+        AUTHTOKEN: "{{ aos_session.token }}"
+      body_format: json
+    register: bps
+    run_once: true
+
+  - name: "Find Id for Blueprint vpod-evpn"
+    set_fact:
+      bp_id: "{{ item }}"
+    with_items: "{{ bps|json_query(jquery_bp) }}"
+    run_once: true
+    vars:
+      jquery_bp: "json.items[?label=='vpod-evpn'].id"
+
   - name: test_cleanup_delete_asn_pools
     local_action:
       module: aos_asn_pool
@@ -50,16 +73,29 @@
       ip_version: ipv6
     register: ip6pool
     with_items:
-          - "my-ipv6-pool"
-          - "my-blank-ipv6-pool"
+      - "my-ipv6-pool"
+      - "my-blank-ipv6-pool"
 
   - name: test_cleanup_delete_sec_zone
     local_action:
-      module: aos_blueprint_security_zone
+      module: aos_bp_security_zone
       session: "{{ aos_session }}"
       blueprint_id: "{{bp_id}}"
-      id: "{{item}}"
+      name: "{{item}}"
       state: absent
     register: seczone
     with_items:
-          - "{{seczone2.id}}"
+      - 'my-sec-zone'
+      - 'my-sec-zone2'
+
+  - name: test_delete_vn
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "{{ item }}"
+      state: absent
+    register: vn_test
+    with_items:
+      - 'my-virt-net'
+      - 'my-virt-net2'

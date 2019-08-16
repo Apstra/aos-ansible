@@ -1,6 +1,6 @@
 # Copyright (c) 2017 Apstra Inc, <community@apstra.com>
 
-import library.aos_blueprint_security_zone as aos_sec_zone
+import library.aos_bp_security_zone as aos_sec_zone
 
 
 class TestSzVniValidate(object):

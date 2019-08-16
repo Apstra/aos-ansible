@@ -182,8 +182,8 @@ from library.aos import aos_get, aos_post, aos_put, aos_delete, validate_vlan_id
 ENDPOINT = '/virtual-networks'
 
 
-def vn_add_otions(new_vn, vn_id, ipv4_enabled, ipv6_enabled, ipv4_subnet,
-                  ipv6_subnet, virtual_gw_ipv4, virtual_gw_ipv6, dhcp_service):
+def vn_add_options(new_vn, vn_id, ipv4_enabled, ipv6_enabled, ipv4_subnet,
+                   ipv6_subnet, virtual_gw_ipv4, virtual_gw_ipv6, dhcp_service):
     if vn_id:
         new_vn["vn_id"] = str(vn_id)
 
@@ -271,9 +271,9 @@ def virt_net_present(module, session, endpoint, my_vn, vn_id, sec_zone_id,
         if sec_zone_id:
             new_vn["security_zone_id"] = sec_zone_id
 
-        vn_add_otions(new_vn, vn_id, ipv4_enabled, ipv6_enabled,
-                      ipv4_subnet, ipv6_subnet, virtual_gw_ipv4,
-                      virtual_gw_ipv6, dhcp_service)
+        vn_add_options(new_vn, vn_id, ipv4_enabled, ipv6_enabled,
+                       ipv4_subnet, ipv6_subnet, virtual_gw_ipv4,
+                       virtual_gw_ipv6, dhcp_service)
 
         if not module.check_mode:
             resp = aos_post(session, endpoint, new_vn)
@@ -294,9 +294,9 @@ def virt_net_present(module, session, endpoint, my_vn, vn_id, sec_zone_id,
                   "id": my_vn['id']
                   }
 
-        vn_add_otions(new_vn, vn_id, ipv4_enabled, ipv6_enabled,
-                      ipv4_subnet, ipv6_subnet, virtual_gw_ipv4,
-                      virtual_gw_ipv6, dhcp_service)
+        vn_add_options(new_vn, vn_id, ipv4_enabled, ipv6_enabled,
+                       ipv4_subnet, ipv6_subnet, virtual_gw_ipv4,
+                       virtual_gw_ipv6, dhcp_service)
 
         if not module.check_mode:
             aos_put(session, endpoint_put, new_vn)

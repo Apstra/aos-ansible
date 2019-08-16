@@ -182,7 +182,7 @@ def validate_vni_id(vni_id):
     :return: list
     """
     errors = []
-    if vni_id <= 4095 or vni_id >= 16777213:
+    if vni_id < 4095 or vni_id > 16777213:
         errors.append("Invalid ID: must be a valid VNI number between 4096"
                       " and 16777214")
 
@@ -196,7 +196,7 @@ def validate_vlan_id(vlan_id):
     :return: list
     """
     errors = []
-    if vlan_id <= 1 or vlan_id > 4094:
+    if vlan_id < 1 or vlan_id > 4094:
         errors.append("Invalid ID: must be a valid vlan id between 1"
                       " and 4094")
 
@@ -241,7 +241,7 @@ def validate_vni_ranges(ranges):
             errors.append("Invalid range: Expected integer values")
         elif vni_range[1] <= vni_range[0]:
             errors.append("Invalid range: 2nd element must be bigger than 1st")
-        elif vni_range[0] <= 4095 or vni_range[1] >= 16777213:
+        elif vni_range[0] < 4095 or vni_range[1] > 16777213:
             errors.append("Invalid range: must be a valid range between 4096"
                           " and 16777214")
 

@@ -2,9 +2,10 @@
 
 import os
 import json
+import pytest
 from mock import patch
 from library.aos import validate_vlan_id, validate_ip_format, validate_vni_ranges, \
-    validate_asn_ranges, find_bp_system_nodes
+    validate_asn_ranges, validate_vni_id, find_bp_system_nodes
 
 
 def read_fixture(name):
@@ -18,14 +19,26 @@ def deserialize_fixture(name):
 
 class TestVlanValidate(object):
 
-    def test_vlan_validate_valid_id(self):
+    def test_vlan_validate_valid_id_high(self):
 
         test_id = 4094
         assert validate_vlan_id(test_id) == []
 
-    def test_vlan_validate_invalid_range(self):
+    def test_vlan_validate_valid_id_low(self):
 
-        test_id = 4096
+        test_id = 1
+        assert validate_vlan_id(test_id) == []
+
+    def test_vlan_validate_invalid_id_low(self):
+
+        test_id = 0
+        assert validate_vlan_id(test_id) == ['Invalid ID: must be a '
+                                             'valid vlan id between 1 '
+                                             'and 4094']
+
+    def test_vlan_validate_invalid_id_high(self):
+
+        test_id = 4095
         assert validate_vlan_id(test_id) == ['Invalid ID: must be a '
                                              'valid vlan id between 1 '
                                              'and 4094']
@@ -67,6 +80,20 @@ class TestAsnPoolValidate(object):
         assert validate_asn_ranges(test_range) == ['Invalid range: '
                                                    '2nd element must '
                                                    'be bigger than 1st']
+
+    def test_asn_validate_invalid_out_of_range_low(self):
+
+        test_range = [[0, 100]]
+        assert validate_asn_ranges(test_range) == ['Invalid range: must be '
+                                                   'a valid range between 1 '
+                                                   'and 4294967295']
+
+    def test_asn_validate_invalid_out_of_range_high(self):
+
+        test_range = [[100, 4294967296]]
+        assert validate_asn_ranges(test_range) == ['Invalid range: must be '
+                                                   'a valid range between 1 '
+                                                   'and 4294967295']
 
 
 class TestVniPoolValidate(object):
@@ -116,6 +143,24 @@ class TestVniPoolValidate(object):
                                                    '16777214']
 
 
+class TestVniIdValidate(object):
+
+    def test_vni_validate_id(self):
+
+        test_id = 4096
+        assert validate_vni_id(test_id) == []
+
+    def test_vni_validate_id_invalid_low(self):
+        test_id = 4095
+        assert validate_vni_id(test_id) == ["Invalid ID: must be a valid VNI "
+                                            "number between 4096 and 16777214"]
+
+    def test_vni_validate_id_invalid_high(self):
+        test_id = 16777215
+        assert validate_vni_id(test_id) == ["Invalid ID: must be a valid VNI "
+                                            "number between 4096 and 16777214"]
+
+
 ADDR_TYPE_V4 = 'ipv4'
 ADDR_TYPE_V6 = 'ipv6'
 
@@ -146,6 +191,15 @@ class TestIpPoolValidate(object):
         assert validate_ip_format(test_range,
                                   ADDR_TYPE_V4) == ["Invalid format: "
                                                     "['192.168.359.0/24']"]
+
+    def test_ipv4_validate_invalid_ip_version(self):
+
+        test_range = ['192.168.359.0/24']
+        bad_addr_type = 'ipv5'
+        with pytest.raises(AssertionError) as e:
+            validate_ip_format(test_range, bad_addr_type)
+
+        assert "Invalid IP version: ipv5" in str(e.value)
 
 
 class TestIpv6PoolValidate(object):
@@ -238,4 +292,16 @@ class TestFindBpSystemNodes:
         test_bp = 'testbpid'
 
         return_node = find_bp_system_nodes(test_session, test_bp)
+        assert return_node == mock_return['data']['system_nodes']
+
+    @patch('library.aos.aos_post')
+    def test_find_system_node_id_blank_nodes(self, mock_post):
+        mock_return = deserialize_fixture('bp_system_nodes_ql.json')
+
+        mock_post.return_value = mock_return
+        test_session = 'test'
+        test_nodes = []
+        test_bp = 'testbpid'
+
+        return_node = find_bp_system_nodes(test_session, test_bp, nodes=test_nodes)
         assert return_node == mock_return['data']['system_nodes']

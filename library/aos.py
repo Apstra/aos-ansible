@@ -182,7 +182,7 @@ def validate_vni_id(vni_id):
     :return: list
     """
     errors = []
-    if vni_id < 4095 or vni_id > 16777213:
+    if vni_id < 4096 or vni_id > 16777213:
         errors.append("Invalid ID: must be a valid VNI number between 4096"
                       " and 16777214")
 
@@ -220,6 +220,9 @@ def validate_asn_ranges(ranges):
             errors.append("Invalid range: Expected integer values")
         elif asn_range[1] <= asn_range[0]:
             errors.append("Invalid range: 2nd element must be bigger than 1st")
+        elif asn_range[0] < 1 or asn_range[1] > 2 ** 32 - 1:
+            errors.append("Invalid range: must be a valid range between 1"
+                          " and 4294967295")
 
     return errors
 
@@ -255,7 +258,11 @@ def validate_ip_format(addrs, ip_version):
     :param ip_version: str ('ipv4', 'ipv6')
     :return: bool
     """
+
+    assert ip_version in ['ipv4', 'ipv6'], \
+        "Invalid IP version: {}".format(ip_version)
     errors = []
+
     for addr in addrs:
         try:
             results = ipaddress.ip_network(addr)

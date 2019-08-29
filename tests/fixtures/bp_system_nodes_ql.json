@@ -1,0 +1,61 @@
+{
+  "data": {
+    "system_nodes": [
+      {
+        "id": "788bf6cd-f714-49fa-a90b-0daffa7c237f",
+        "label": "rack_002_server001",
+        "role": "l2_server"
+      },
+      {
+        "id": "64b78e8f-9ae6-45dc-a1de-3bc81a62393e",
+        "label": "rack_001_leaf1",
+        "role": "leaf"
+      },
+      {
+        "id": "218a04d6-5fa5-42af-b7bb-acfac0e94538",
+        "label": "rack_004_server001",
+        "role": "l2_server"
+      },
+      {
+        "id": "2d455a66-88c2-4731-964f-babcd6398c8f",
+        "label": "rack_004_leaf1",
+        "role": "leaf"
+      },
+      {
+        "id": "8188c525-c682-44ab-bd3a-5bd853306a46",
+        "label": "rack_003_leaf1",
+        "role": "leaf"
+      },
+      {
+        "id": "e0fc723a-114d-4080-89ab-789d7da6c0eb",
+        "label": "spine2",
+        "role": "spine"
+      },
+      {
+        "id": "0ec19c45-67a9-4bbd-8cd4-da5f759ff929",
+        "label": "rack_003_server001",
+        "role": "l2_server"
+      },
+      {
+        "id": "e0b877d5-27a5-4710-a4e9-adf919184ddd",
+        "label": "vpod-evpn-router",
+        "role": "external_router"
+      },
+      {
+        "id": "06b3424a-6f6a-422f-b6fa-a340f117981a",
+        "label": "spine1",
+        "role": "spine"
+      },
+      {
+        "id": "8a8a7422-3c7c-4590-9568-3f7f5888b2a8",
+        "label": "rack_001_server001",
+        "role": "l2_server"
+      },
+      {
+        "id": "7b9f9886-84c4-401d-96dd-da8c7fb0d925",
+        "label": "rack_002_leaf1",
+        "role": "leaf"
+      }
+    ]
+  }
+}

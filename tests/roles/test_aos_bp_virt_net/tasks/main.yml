@@ -1,0 +1,301 @@
+
+  - set_fact:
+      bound_to:
+        - 'rack_001_leaf1'
+        - 'rack_002_leaf1'
+
+  - name: Create a session with the AOS-server
+    local_action:
+      module: aos_login
+      server: "{{ ansible_ssh_host }}"
+      user: "{{ ansible_ssh_user }}"
+      passwd: "{{ ansible_ssh_pass }}"
+      port: 443
+    run_once: true
+
+  - name: Get Blueprints from AOS
+    local_action:
+      module: uri
+      url: "https://{{ aos_session.server }}/api/blueprints"
+      method: GET
+      status_code: 200
+      validate_certs: no
+      headers:
+        Content-Type: 'application/json'
+        Accept: 'application/json'
+        AUTHTOKEN: "{{ aos_session.token }}"
+      body_format: json
+    register: bps
+    run_once: true
+
+  - name: "Find Id for Blueprint vpod-evpn"
+    set_fact:
+      bp_id: "{{ item }}"
+    with_items: "{{ bps|json_query(jquery_bp) }}"
+    run_once: true
+    vars:
+      jquery_bp: "json.items[?label=='vpod-evpn'].id"
+
+  - name: test_create_new_vn_invalid_type
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-virt-net"
+      vn_id: "invalid"
+      bound_to_name: "{{ bound_to }}"
+      state: present
+    register: vn
+    ignore_errors: True
+
+  - name: check_test_create_new_vn_invalid_type
+    assert:
+      that:
+        - vn|failed
+        - "'Invalid ID: must be an integer' in vn.msg"
+
+  - name: test_create_new_vn_invalid_vntype
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-virt-net"
+      vn_id: 100
+      vn_type: "evpn"
+      bound_to_name: "{{ bound_to }}"
+      state: present
+    register: vn
+    ignore_errors: True
+
+  - name: check_test_create_new_vn_invalid_vntype
+    assert:
+      that:
+        - vn|failed
+        - "'value of vn_type must be one of: vlan, vxlan, got: evpn' in vn.msg"
+
+  - name: test_create_new_vn_invalid_sz
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-virt-net"
+      vn_id: 'test1'
+      bound_to_name: "{{ bound_to }}"
+      sec_zone_id: "invalid id"
+      state: present
+    register: vn
+    ignore_errors: True
+
+  - name: check_test_create_new_vn_invalid_sz
+    assert:
+      that:
+        - vn|failed
+        - "'Invalid ID: must be an integer' in vn.msg"
+
+  - name: test_create_new_vn_invalid_ipv4_subnet
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-virt-net"
+      vn_id: 'test1'
+      bound_to_name: "{{ bound_to }}"
+      ipv4_subnet: '192.168.359.0/24'
+      state: present
+    register: vn_v4
+    ignore_errors: True
+    
+  - name: check_test_create_new_vn_invalid_ipv4_subnet
+    assert:
+      that:
+        - vn_v4|failed
+        - "'Invalid ID: must be an integer' in vn_v4.msg"
+    
+  - name: test_create_new_vn_invalid_ipv4_gateway
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-virt-net"
+      vn_id: 'test1'
+      bound_to_name: "{{ bound_to }}"
+      virtual_gw_ipv4: '192.168.359.1'
+      state: present
+    register: vn_v4
+    ignore_errors: True
+    
+  - name: check_test_create_new_vn_invalid_ipv4_gateway
+    assert:
+      that:
+        - vn_v4|failed
+        - "'Invalid ID: must be an integer' in vn_v4.msg"
+    
+  - name: test_create_new_vn_invalid_ipv6_subnet
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-virt-net"
+      vn_id: 'test1'
+      bound_to_name: "{{ bound_to }}"
+      ipv4_subnet: 'fe80:0:g:1::/64'
+      state: present
+    register: vn_v6
+    ignore_errors: True
+    
+  - name: check_test_create_new_vn_invalid_ipv6_subnet
+    assert:
+      that:
+        - vn_v4|failed
+        - "'Invalid ID: must be an integer' in vn_v6.msg"
+    
+  - name: test_create_new_vn_invalid_ipv6_gateway
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-virt-net"
+      vn_id: 'test1'
+      bound_to_name: "{{ bound_to }}"
+      virtual_gw_ipv4: 'fe80:0:g:1::1/64'
+      state: present
+    register: vn_v6
+    ignore_errors: True
+    
+  - name: check_test_create_new_vn_invalid_ipv6_gateway
+    assert:
+      that:
+        - vn_v4|failed
+        - "'Invalid ID: must be an integer' in vn_v6.msg"
+        
+  - name: test_create_new_vn
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-virt-net"
+      vn_type: "vxlan"
+      bound_to_name: "{{ bound_to }}"
+      state: present
+    register: vn_test1
+
+  - name: check_test_create_new_vn
+    assert:
+      that:
+        - vn_test1|success
+        - vn_test1|changed
+        - vn_test1.name == "my-virt-net"
+        - vn_test1.value.label == "my-virt-net"
+        - vn_test1.value.vn_type == "vxlan"
+
+  - name: test_update_vn_by_name
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-virt-net"
+      vn_type: "vxlan"
+      bound_to_name: "{{ bound_to }}"
+      vn_id: 10001
+      ipv4_enabled: true
+      ipv4_subnet: '10.10.10.0/24'
+      virtual_gw_ipv4: '10.10.10.1'
+      dhcp_service: true
+      state: present
+    register: vn_test1
+
+  - name: check_update_vn_by_name
+    assert:
+      that:
+        - vn_test1|success
+        - vn_test1|changed
+        - vn_test1.name == "my-virt-net"
+        - vn_test1.value.label == "my-virt-net"
+        - vn_test1.value.vn_id == "10001"
+        - vn_test1.value.ipv4_subnet == "10.10.10.0/24"
+        - vn_test1.value.virtual_gw_ipv4 == "10.10.10.1"
+        - vn_test1.value.dhcp_service == "dhcpServiceEnabled"
+
+  - name: test_update_vn_by_id
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      id: "{{ vn_test1.id }}"
+      vn_type: "vxlan"
+      bound_to_name: "{{ bound_to }}"
+      vn_id: 10005
+      ipv4_enabled: true
+      ipv4_subnet: '11.11.11.0/24'
+      virtual_gw_ipv4: '11.11.11.1'
+      dhcp_service: true
+      state: present
+    register: vn_test1
+
+  - name: check_update_vn_by_id
+    assert:
+      that:
+        - vn_test1|success
+        - vn_test1|changed
+        - vn_test1.name == "my-virt-net"
+        - vn_test1.value.label == "my-virt-net"
+        - vn_test1.value.vn_id == "10005"
+        - vn_test1.value.ipv4_subnet == "11.11.11.0/24"
+        - vn_test1.value.virtual_gw_ipv4 == "11.11.11.1"
+        - vn_test1.value.dhcp_service == "dhcpServiceEnabled"
+
+  - name: test_create_new_vn_bound_to_id
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "my-virt-net2"
+      vn_type: "vxlan"
+      bound_to_id: "{{ vn_test1.value.bound_to[0].system_id }}"
+      state: present
+    register: vn_test2
+
+  - name: check_test_create_new_vn_bound_to_id
+    assert:
+      that:
+        - vn_test2|success
+        - vn_test2|changed
+        - vn_test2.name == "my-virt-net2"
+        - vn_test2.value.label == "my-virt-net2"
+        - vn_test2.value.bound_to[0].system_id == vn_test1.value.bound_to[0].system_id
+
+  - name: test_create_new_vn_bound_to_id_invalid
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "bad-virt-net2"
+      vn_type: "vxlan"
+      bound_to_name: 'bad_device_name'
+      state: present
+    register: vn_test3
+    ignore_errors: True
+
+  - name: check_test_create_new_vn_bound_to_id_invalid
+    assert:
+      that:
+        - vn_test3|failed
+        - "'System Node not found by name' in vn_test3.msg"
+
+  - name: test_delete_vn
+    local_action:
+      module: aos_bp_virtual_networks
+      session: "{{ aos_session }}"
+      blueprint_id: "{{bp_id}}"
+      name: "{{ item }}"
+      state: absent
+    register: vn_test
+    with_items:
+      - 'my-virt-net'
+      - 'my-virt-net2'
+
+  - name: check_test_delete_vn
+    assert:
+      that:
+        - vn_test1|success
+        - vn_test1|changed

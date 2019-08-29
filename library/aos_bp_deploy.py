@@ -6,7 +6,7 @@ ANSIBLE_METADATA = {'metadata_version': '1.0',
 
 DOCUMENTATION = '''
 ---
-module: aos_blueprint_deploy
+module: aos_bp_deploy
 author: ryan@apstra.com (@that1guy15)
 version_added: "2.7"
 short_description: Deploy staged blueprint in AOS
@@ -35,14 +35,14 @@ options:
 EXAMPLES = '''
 
 - name: Deploy Blueprint DC1-EVPN by name
-  aos_blueprint_deploy:
+  aos_bp_deploy:
     session: "{{ aos_session }}"
     name: 'DC1-EVPN'
 
 - name: Deploy Blueprint DC1-EVPN by id
-  aos_blueprint_deploy:
+  aos_bp_deploy:
     session: "{{ aos_session }}"
-    id: "{{ aos_blueprint_id }}"
+    id: "{{ aos_bp_id }}"
 '''
 
 RETURNS = '''
@@ -88,7 +88,7 @@ def get_blueprint_id(session, blueprint_name):
     return None
 
 
-def aos_blueprint_deploy(module):
+def aos_bp_deploy(module):
     mod_args = module.params
 
     if mod_args['id']:
@@ -149,7 +149,7 @@ def main():
         supports_check_mode=False
     )
 
-    aos_blueprint_deploy(module)
+    aos_bp_deploy(module)
 
 
 if __name__ == '__main__':

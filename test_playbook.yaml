@@ -8,26 +8,25 @@
   tasks:
     - block:
         - include_role:
-            name: test_pb_aos_login
+            name: test_aos_login
         - include_role:
-            name: test_pb_aos_asn_pool
+            name: test_aos_asn_pool
         - include_role:
-            name: test_pb_aos_vni_pool
+            name: test_aos_vni_pool
         - include_role:
-            name: test_pb_aos_ip_pool
+            name: test_aos_ip_pool
         - include_role:
-            name: test_pb_aos_blueprint_deploy
+            name: test_aos_bp_deploy
         - include_role:
-            name: test_pb_aos_bp_security_zone
+            name: test_aos_bp_security_zone
+        - include_role:
+            name: test_aos_bp_virt_net
       rescue:
         - name: Clean Up After Failure
           debug:
             msg: Failure detected, cleaning up and reseting environment"
         - include_role:
             name: test_clean_up_tests
-        - name: Failure detected in test roles
-          fail:
-            msg: "Failure: {{ansible_failed_task.name}}: {{ansible_failed_result}}"
       always:
         - include_role:
             name: test_clean_up_tests
